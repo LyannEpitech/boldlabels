@@ -1,6 +1,6 @@
 // Types BoldLabels - Selon CDC Technique
 
-export type ElementType = 'text' | 'barcode' | 'qrcode' | 'image';
+export type ElementType = 'text' | 'barcode' | 'qrcode' | 'image' | 'rectangle';
 
 export interface Template {
   id: string;
@@ -60,11 +60,18 @@ export interface ImageProperties {
   objectFit: 'contain' | 'cover' | 'fill';
 }
 
+export interface RectangleProperties {
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+}
+
 export type ElementProperties =
   | TextProperties
   | BarcodeProperties
   | QRCodeProperties
-  | ImageProperties;
+  | ImageProperties
+  | RectangleProperties;
 
 // Mapping
 export interface Mapping {

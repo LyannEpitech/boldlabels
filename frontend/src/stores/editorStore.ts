@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Template, TemplateElement, Mapping, CsvData } from '../types';
+import type { Template, TemplateElement } from '../types';
 
 interface EditorState {
   // Template courant
@@ -40,6 +40,10 @@ interface EditorActions {
   setZoom: (zoom: number) => void;
   setShowGrid: (show: boolean) => void;
   setSnapToGrid: (snap: boolean) => void;
+  
+  // Alignment
+  alignElements: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeElements: (axis: 'horizontal' | 'vertical') => void;
   
   // Historique
   undo: () => void;
@@ -237,6 +241,46 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       setZoom: (zoom) => set({ zoom: Math.max(0.25, Math.min(3, zoom)) }),
       setShowGrid: (show) => set({ showGrid: show }),
       setSnapToGrid: (snap) => set({ snapToGrid: snap }),
+      
+      alignElements: (alignment) => {
+        const { template, selectedElementId } = get();
+        if (!template || !selectedElementId) return;
+        
+        const selectedEl = template.elements.find((el) => el.id === selectedElementId);
+        if (!selectedEl) return;
+        
+        get().saveToHistory();
+        
+        let updates: Partial<TemplateElement> = {};
+        
+        switch (alignment) {
+          case 'left':
+            updates = { x: 0 };
+            break;
+          case 'center':
+            updates = { x: (template.width - selectedEl.width) / 2 };
+            break;
+          case 'right':
+            updates = { x: template.width - selectedEl.width };
+            break;
+          case 'top':
+            updates = { y: 0 };
+            break;
+          case 'middle':
+            updates = { y: (template.height - selectedEl.height) / 2 };
+            break;
+          case 'bottom':
+            updates = { y: template.height - selectedEl.height };
+            break;
+        }
+        
+        get().updateElement(selectedElementId, updates);
+      },
+      
+      distributeElements: (axis) => {
+        // TODO: Implement multi-selection distribution
+        console.log('Distribute', axis);
+      },
       
       saveToHistory: () => {
         const { template, history, historyIndex } = get();
