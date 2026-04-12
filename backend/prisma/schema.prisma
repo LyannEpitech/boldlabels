@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Template {
+  id             String    @id @default(uuid())
+  name           String
+  description    String?
+  width          Float
+  height         Float
+  unit           String    @default("mm")
+  backgroundColor String   @default("#FFFFFF")
+  borderWidth    Float     @default(0)
+  borderColor    String    @default("#000000")
+  borderRadius   Float     @default(0)
+  elements       TemplateElement[]
+  mappings       Mapping[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model TemplateElement {
+  id           String   @id @default(uuid())
+  templateId   String
+  template     Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  type         String
+  variableName String
+  x            Float
+  y            Float
+  width        Float
+  height       Float
+  rotation     Float    @default(0)
+  properties   Json
+  zIndex       Int
+  
+  @@index([templateId])
+}
+
+model Mapping {
+  id             String          @id @default(uuid())
+  name           String
+  templateId     String
+  template       Template        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  columnMappings ColumnMapping[]
+  csvSample      String[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  
+  @@index([templateId])
+}
+
+model ColumnMapping {
+  id           String  @id @default(uuid())
+  mappingId    String
+  mapping      Mapping @relation(fields: [mappingId], references: [id], onDelete: Cascade)
+  variableName String
+  columnIndex  Int
+  columnName   String
+  
+  @@index([mappingId])
+}
