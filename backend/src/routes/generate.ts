@@ -65,7 +65,7 @@ export function createGenerateRoutes(prisma: PrismaClient) {
       
       if (!mapping) {
         return res.status(404).json({ error: 'Mapping not found' });
-      });
+      }
       
       // Convert column mappings to record (by column name, not index)
       const mappingRecord: Record<string, string> = {};
