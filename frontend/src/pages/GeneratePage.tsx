@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { useEditorStore } from '../stores/editorStore';
+import { useMappingStore } from '../stores/mappingStore';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -16,6 +17,7 @@ export function GeneratePage() {
   const [searchParams] = useSearchParams();
   const mappingId = searchParams.get('mapping');
   const { template, templates, loadTemplate } = useEditorStore();
+  const { mappings: savedMappings } = useMappingStore();
 
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -43,10 +45,9 @@ export function GeneratePage() {
     }
   }, [id, template, loadTemplate]);
 
-  // Load saved data from localStorage
+  // Load mapping from store and CSV from localStorage
   useEffect(() => {
     const savedCsv = localStorage.getItem(`csv_${id}`);
-    const savedMapping = localStorage.getItem(`mapping_${mappingId}`);
 
     if (savedCsv) {
       const parsed = JSON.parse(savedCsv);
@@ -56,16 +57,19 @@ export function GeneratePage() {
       setShowUploadModal(true);
     }
 
-    if (savedMapping) {
-      const parsed = JSON.parse(savedMapping);
-      // Store mapping by column name instead of index for flexibility
-      const mappingRecord: Record<string, string> = {};
-      parsed.columnMappings.forEach((cm: any) => {
-        mappingRecord[cm.variableName] = cm.columnName; // Store column name, not index
-      });
-      setMapping(mappingRecord);
+    // Load mapping from Zustand store
+    if (mappingId) {
+      const foundMapping = savedMappings.find((m) => m.id === mappingId);
+      if (foundMapping) {
+        const mappingRecord: Record<string, string> = {};
+        foundMapping.columnMappings.forEach((cm) => {
+          mappingRecord[cm.variableName] = cm.columnName;
+        });
+        setMapping(mappingRecord);
+        console.log('Loaded mapping from store:', mappingRecord);
+      }
     }
-  }, [id, mappingId]);
+  }, [id, mappingId, savedMappings]);
 
   // Auto-calculate layout based on template size
   useEffect(() => {
