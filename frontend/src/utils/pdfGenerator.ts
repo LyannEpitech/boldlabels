@@ -133,7 +133,11 @@ function drawTextElement(
 ): void {
   const props = element.properties as any;
   
-  // Rotation placeholder - jsPDF rotation requires advanced matrix transformations
+  // Vérification défensive des propriétés
+  if (!props) {
+    console.warn(`Properties undefined for element ${element.variableName}`);
+    return;
+  }
 
   // Map font family
   const fontMap: Record<string, string> = {
@@ -183,9 +187,6 @@ function drawTextElement(
     align: align as any,
     maxWidth: element.width,
   });
-  
-  // Restore state
-  doc.restoreGraphicsState();
 }
 
 async function drawBarcodeElement(
