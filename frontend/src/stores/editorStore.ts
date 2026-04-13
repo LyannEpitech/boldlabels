@@ -70,10 +70,22 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       // Actions
       loadTemplates: async () => {
         try {
-          const templates = await dbService.getTemplates();
-          set({ templates });
+          const apiTemplates = await dbService.getTemplates();
+          // Merge with local templates (localStorage via Zustand persist)
+          const localTemplates = get().templates;
+          const merged = [...apiTemplates];
+          
+          // Add local templates that don't exist in API
+          for (const local of localTemplates) {
+            if (!merged.find((t) => t.id === local.id)) {
+              merged.push(local);
+            }
+          }
+          
+          set({ templates: merged });
         } catch (error) {
           console.error('Failed to load templates:', error);
+          // If API fails, keep local templates
         }
       },
       
@@ -94,6 +106,19 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       },
       
       loadTemplate: async (id) => {
+        // First check local state (from Zustand persist)
+        const localTemplate = get().templates.find((t) => t.id === id);
+        if (localTemplate) {
+          set({
+            template: localTemplate,
+            selectedElementId: null,
+            history: [localTemplate],
+            historyIndex: 0,
+          });
+          return;
+        }
+        
+        // If not in local state, try API
         try {
           const template = await dbService.getTemplate(id);
           if (template) {
