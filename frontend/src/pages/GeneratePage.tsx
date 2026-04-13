@@ -121,6 +121,13 @@ export function GeneratePage() {
   const handleGeneratePDF = async () => {
     if (!template || csvData.length === 0) return;
 
+    // Debug: log mapping and first row
+    console.log('=== PDF Generation Debug ===');
+    console.log('Mapping:', mapping);
+    console.log('CSV Headers:', csvHeaders);
+    console.log('First row:', csvData[0]);
+    console.log('Template elements:', template.elements.map(e => e.variableName));
+
     setIsGenerating(true);
 
     try {
