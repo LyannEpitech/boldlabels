@@ -1,48 +1,45 @@
 #!/bin/bash
-
-# BoldLabels Deployment Script
-
 set -e
 
-echo "🚀 Deploying BoldLabels..."
+echo "🚀 Déploiement BoldLabels..."
 
-# Check if docker-compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "❌ docker-compose is not installed"
-    exit 1
+# Vérifier les variables d'environnement
+if [ -z "$DB_PASSWORD" ]; then
+    echo "⚠️  Attention: DB_PASSWORD non défini, utilisation de la valeur par défaut"
 fi
 
-# Create .env files if they don't exist
-if [ ! -f backend/.env ]; then
-    echo "📝 Creating backend/.env from example..."
-    cp backend/.env.example backend/.env
+# Pull latest code (si sur une branche git)
+if [ -d ".git" ]; then
+    echo "📥 Mise à jour du code..."
+    git pull origin main || echo "⚠️  Impossible de pull, continuation..."
 fi
 
-if [ ! -f frontend/.env ]; then
-    echo "📝 Creating frontend/.env from example..."
-    cp frontend/.env.example frontend/.env
-fi
+# Arrêter les conteneurs existants
+echo "🛑 Arrêt des conteneurs existants..."
+docker-compose -f docker-compose.prod.yml down
 
-# Build and start services
-echo "🏗️ Building services..."
-docker-compose build
+# Build et démarrage
+echo "🔨 Build des images..."
+docker-compose -f docker-compose.prod.yml build --no-cache
 
-echo "🚀 Starting services..."
-docker-compose up -d
+echo "▶️  Démarrage des services..."
+docker-compose -f docker-compose.prod.yml up -d
 
-# Wait for database
-echo "⏳ Waiting for database..."
+# Attendre que la DB soit prête
+echo "⏳ Attente de la base de données..."
 sleep 5
 
 # Run migrations
-echo "🔄 Running database migrations..."
-docker-compose exec backend npx prisma migrate deploy
+echo "🗄️  Exécution des migrations..."
+docker-compose -f docker-compose.prod.yml exec -T backend npx prisma migrate deploy || echo "⚠️  Migration peut-être déjà à jour"
 
-echo "✅ Deployment complete!"
 echo ""
-echo "📊 Services:"
-echo "  Frontend: http://localhost"
-echo "  Backend API: http://localhost:3000"
-echo "  Database: localhost:5432"
+echo "✅ Déploiement terminé!"
 echo ""
-echo "📝 Logs: docker-compose logs -f"
+echo "📊 Status des services:"
+docker-compose -f docker-compose.prod.yml ps
+
+echo ""
+echo "📝 Logs:"
+echo "  docker-compose -f docker-compose.prod.yml logs -f"
+echo ""

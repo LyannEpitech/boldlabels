@@ -65,12 +65,12 @@ export function createGenerateRoutes(prisma: PrismaClient) {
       
       if (!mapping) {
         return res.status(404).json({ error: 'Mapping not found' });
-      });
+      }
       
-      // Convert column mappings to record
-      const mappingRecord: Record<string, number> = {};
+      // Convert column mappings to record (by column name, not index)
+      const mappingRecord: Record<string, string> = {};
       mapping.columnMappings.forEach((cm) => {
-        mappingRecord[cm.variableName] = cm.columnIndex;
+        mappingRecord[cm.variableName] = cm.columnName;
       });
       
       // Generate PDF

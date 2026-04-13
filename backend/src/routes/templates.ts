@@ -133,7 +133,10 @@ export function createTemplateRoutes(prisma: PrismaClient) {
           ...templateData,
           name: `${original.name} (copie)`,
           elements: {
-            create: original.elements.map(({ id, templateId, ...el }) => el),
+            create: original.elements.map(({ id, templateId, ...el }) => ({
+              ...el,
+              properties: el.properties as any,
+            })),
           },
         },
         include: { elements: true },

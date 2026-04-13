@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Rect, Transformer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
+import { useEditorStore } from '../../../stores/editorStore';
 import type { TemplateElement, BarcodeProperties } from '../../../types';
 import JsBarcode from 'jsbarcode';
 
@@ -19,8 +20,8 @@ interface BarcodeElementProps {
 
 export function BarcodeElement({ element, isSelected, onSelect, onChange }: BarcodeElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
-
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { snapToGrid, gridSize } = useEditorStore();
   const [barcodeImage, setBarcodeImage] = useState<HTMLImageElement | null>(null);
   const props = element.properties as BarcodeProperties;
   
@@ -34,7 +35,11 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
   // Generate barcode
   useEffect(() => {
     const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    
     try {
+      // Try to generate barcode with actual value
       JsBarcode(canvas, element.variableName || '123456789012', {
         format: props.format || 'EAN13',
         width: 2,
@@ -50,8 +55,23 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
       img.src = canvas.toDataURL();
       img.onload = () => setBarcodeImage(img);
     } catch (e) {
-      // Fallback: show placeholder
-      setBarcodeImage(null);
+      // Fallback: draw placeholder with error message
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = props.backgroundColor || '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = props.lineColor || '#000000';
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#999999';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Invalid ' + (props.format || 'EAN13'), canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillText(element.variableName.slice(0, 15), canvas.width / 2, canvas.height / 2 + 10);
+      }
+      
+      const img = new Image();
+      img.src = canvas.toDataURL();
+      img.onload = () => setBarcodeImage(img);
     }
   }, [element.variableName, props.format, props.displayValue, props.lineColor, props.backgroundColor]);
   
@@ -76,10 +96,13 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            x: e.target.x() / MM_TO_PX,
-            y: e.target.y() / MM_TO_PX,
-          });
+          let x = e.target.x() / MM_TO_PX;
+          let y = e.target.y() / MM_TO_PX;
+          if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+          }
+          onChange({ x, y });
         }}
         onTransformEnd={(e) => {
           const node = e.target;

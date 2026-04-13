@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: boldlabels-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: boldlabels
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-boldlabels_secret}
+      POSTGRES_DB: boldlabels
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - boldlabels-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boldlabels"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    container_name: boldlabels-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://boldlabels:${DB_PASSWORD:-boldlabels_secret}@postgres:5432/boldlabels
+      NODE_ENV: production
+      PORT: 3001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - boldlabels-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: boldlabels-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - boldlabels-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: boldlabels-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - certbot-data:/etc/letsencrypt:ro
+      - ./nginx/www:/var/www/certbot:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - boldlabels-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: boldlabels-certbot
+    volumes:
+      - certbot-data:/etc/letsencrypt
+      - ./nginx/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - boldlabels-network
+
+volumes:
+  postgres_data:
+  certbot-data:
+
+networks:
+  boldlabels-network:
+    driver: bridge

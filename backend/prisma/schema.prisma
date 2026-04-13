@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -35,7 +35,7 @@ model TemplateElement {
   width        Float
   height       Float
   rotation     Float    @default(0)
-  properties   Json
+  properties   String
   zIndex       Int
   
   @@index([templateId])
@@ -47,7 +47,7 @@ model Mapping {
   templateId     String
   template       Template        @relation(fields: [templateId], references: [id], onDelete: Cascade)
   columnMappings ColumnMapping[]
-  csvSample      String[]
+  csvSample      String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   

@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Navigate, Link } from 'react-router-dom';
 import { useEditorStore } from '../stores/editorStore';
+import { useMappingStore } from '../stores/mappingStore';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
-import { generateLabelPDF } from '../utils/pdfGenerator';
+import { pdfService } from '../services/dbService';
+import { LabelPreview } from '../components/LabelPreview';
+import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
 
@@ -15,12 +19,15 @@ export function GeneratePage() {
   const [searchParams] = useSearchParams();
   const mappingId = searchParams.get('mapping');
   const { template, templates, loadTemplate } = useEditorStore();
+  const { mappings: savedMappings } = useMappingStore();
 
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [mapping, setMapping] = useState<Record<string, number>>({});
+  const [mapping, setMapping] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEANDebugger, setShowEANDebugger] = useState(false);
+  const [eanResults, setEanResults] = useState<EANValidationResult[]>([]);
 
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
     pageSize: 'A4',
@@ -42,10 +49,9 @@ export function GeneratePage() {
     }
   }, [id, template, loadTemplate]);
 
-  // Load saved data from localStorage
+  // Load mapping from store and CSV from localStorage
   useEffect(() => {
     const savedCsv = localStorage.getItem(`csv_${id}`);
-    const savedMapping = localStorage.getItem(`mapping_${mappingId}`);
 
     if (savedCsv) {
       const parsed = JSON.parse(savedCsv);
@@ -55,15 +61,19 @@ export function GeneratePage() {
       setShowUploadModal(true);
     }
 
-    if (savedMapping) {
-      const parsed = JSON.parse(savedMapping);
-      const mappingRecord: Record<string, number> = {};
-      parsed.columnMappings.forEach((cm: any) => {
-        mappingRecord[cm.variableName] = cm.columnIndex;
-      });
-      setMapping(mappingRecord);
+    // Load mapping from Zustand store
+    if (mappingId) {
+      const foundMapping = savedMappings.find((m) => m.id === mappingId);
+      if (foundMapping) {
+        const mappingRecord: Record<string, string> = {};
+        foundMapping.columnMappings.forEach((cm) => {
+          mappingRecord[cm.variableName] = cm.columnName;
+        });
+        setMapping(mappingRecord);
+        console.log('Loaded mapping from store:', mappingRecord);
+      }
     }
-  }, [id, mappingId]);
+  }, [id, mappingId, savedMappings]);
 
   // Auto-calculate layout based on template size
   useEffect(() => {
@@ -116,28 +126,43 @@ export function GeneratePage() {
     });
   };
 
-  const handleGeneratePDF = async () => {
+  const generatePDF = async () => {
     if (!template || csvData.length === 0) return;
 
     setIsGenerating(true);
 
     try {
-      const doc = await generateLabelPDF({
+      await pdfService.generateAndSavePDF(
         template,
         csvData,
         csvHeaders,
         mapping,
         pdfOptions,
-        labelLayout,
-      });
-
-      doc.save(`${template.name}_labels.pdf`);
+        labelLayout
+      );
     } catch (error) {
       console.error('PDF generation failed:', error);
       alert('Erreur lors de la génération du PDF');
     }
 
     setIsGenerating(false);
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!template || csvData.length === 0) return;
+
+    // Valider tous les codes EAN
+    const results = validateAllEANs(csvData, csvHeaders, template, mapping);
+    setEanResults(results);
+
+    const hasErrors = results.some(r => !r.valid);
+    if (hasErrors) {
+      setShowEANDebugger(true);
+      return;
+    }
+
+    // Si tout est valide, générer directement
+    await generatePDF();
   };
 
   return (
@@ -308,23 +333,35 @@ export function GeneratePage() {
                   <CardTitle>Aperçu</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
-                    style={{
-                      aspectRatio: pdfOptions.orientation === 'portrait' ? 210 / 297 : 297 / 210,
-                    }}
-                  >
-                    <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                      <FileText size={32} className="text-gray-400 mb-2" />
-                      <p className="text-sm font-medium">{csvData.length} étiquettes</p>
-                      <p className="text-xs text-gray-500">
-                        {labelLayout.labelsPerRow}×{labelLayout.labelsPerColumn} par page
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {Math.ceil(csvData.length / labelLayout.labelsPerPage)} pages
-                      </p>
+                  {template && csvData.length > 0 ? (
+                    <div className="bg-white rounded border overflow-hidden flex items-center justify-center p-4">
+                      <LabelPreview
+                        template={template}
+                        rowData={csvData[0]}
+                        csvHeaders={csvHeaders}
+                        mapping={mapping}
+                        scale={0.8}
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
+                      style={{
+                        aspectRatio: pdfOptions.orientation === 'portrait' ? 210 / 297 : 297 / 210,
+                      }}
+                    >
+                      <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                        <FileText size={32} className="text-gray-400 mb-2" />
+                        <p className="text-sm font-medium">{csvData.length} étiquettes</p>
+                        <p className="text-xs text-gray-500">
+                          {labelLayout.labelsPerRow}×{labelLayout.labelsPerColumn} par page
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {Math.ceil(csvData.length / labelLayout.labelsPerPage)} pages
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button
@@ -366,6 +403,16 @@ export function GeneratePage() {
           </label>
         </div>
       </Modal>
+
+      <EANDebugger
+        isOpen={showEANDebugger}
+        onClose={() => setShowEANDebugger(false)}
+        onContinue={() => {
+          setShowEANDebugger(false);
+          generatePDF();
+        }}
+        results={eanResults}
+      />
     </div>
   );
 }
