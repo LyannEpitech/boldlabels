@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { dbService } from '../services/dbService';
 import type { Template, TemplateElement } from '../types';
 
 interface EditorState {
