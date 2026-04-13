@@ -35,7 +35,11 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
   // Generate barcode
   useEffect(() => {
     const canvas = document.createElement('canvas');
+    canvas.width = 200;
+    canvas.height = 100;
+    
     try {
+      // Try to generate barcode with actual value
       JsBarcode(canvas, element.variableName || '123456789012', {
         format: props.format || 'EAN13',
         width: 2,
@@ -51,8 +55,23 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
       img.src = canvas.toDataURL();
       img.onload = () => setBarcodeImage(img);
     } catch (e) {
-      // Fallback: show placeholder
-      setBarcodeImage(null);
+      // Fallback: draw placeholder with error message
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = props.backgroundColor || '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = props.lineColor || '#000000';
+        ctx.strokeRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#999999';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Invalid ' + (props.format || 'EAN13'), canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillText(element.variableName.slice(0, 15), canvas.width / 2, canvas.height / 2 + 10);
+      }
+      
+      const img = new Image();
+      img.src = canvas.toDataURL();
+      img.onload = () => setBarcodeImage(img);
     }
   }, [element.variableName, props.format, props.displayValue, props.lineColor, props.backgroundColor]);
   

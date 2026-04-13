@@ -47,7 +47,25 @@ export function LabelPreview({ template, rowData, mapping, scale = 0.5 }: LabelP
             await new Promise((resolve) => { img.onload = resolve; });
             newImages[element.id] = img;
           } catch (e) {
-            console.error('Barcode generation failed:', e);
+            // Create placeholder for invalid barcode
+            canvas.width = 200;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              const props = element.properties as any;
+              ctx.fillStyle = props.backgroundColor || '#FFFFFF';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.strokeStyle = props.lineColor || '#000000';
+              ctx.strokeRect(0, 0, canvas.width, canvas.height);
+              ctx.fillStyle = '#999999';
+              ctx.font = '12px Arial';
+              ctx.textAlign = 'center';
+              ctx.fillText('Invalid ' + (props.format || 'EAN13'), canvas.width / 2, canvas.height / 2);
+            }
+            const img = new Image();
+            img.src = canvas.toDataURL();
+            await new Promise((resolve) => { img.onload = resolve; });
+            newImages[element.id] = img;
           }
         } else if (element.type === 'qrcode') {
           try {
