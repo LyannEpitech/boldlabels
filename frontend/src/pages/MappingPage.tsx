@@ -1,23 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useParams, Navigate, Link } from 'react-router-dom';
 import { useEditorStore } from '../stores/editorStore';
+import { useMappingStore } from '../stores/mappingStore';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ArrowLeft, Upload, Save } from 'lucide-react';
 import Papa from 'papaparse';
-import type { Mapping } from '../types';
 
 export function MappingPage() {
   const { id } = useParams<{ id: string }>();
   const { template, templates, loadTemplate } = useEditorStore();
+  const { createMapping, mappings: savedMappings } = useMappingStore();
   
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [csvSample, setCsvSample] = useState<string[]>([]);
-  const [mappings, setMappings] = useState<Record<string, number>>({});
+  const [mappings, setMappings] = useState<Record<string, string>>({});
   const [mappingName, setMappingName] = useState('');
-  const [savedMappings, setSavedMappings] = useState<Mapping[]>([]);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
 
   useEffect(() => {
@@ -45,14 +45,14 @@ export function MappingPage() {
           setCsvHeaders(headers);
           setCsvSample(firstRow);
           
-          // Auto-map by name matching
-          const autoMappings: Record<string, number> = {};
+          // Auto-map by name matching (store column name, not index)
+          const autoMappings: Record<string, string> = {};
           template?.elements.forEach((el) => {
             const matchIndex = headers.findIndex(
               (h) => h.toLowerCase() === el.variableName.toLowerCase()
             );
             if (matchIndex !== -1) {
-              autoMappings[el.variableName] = matchIndex;
+              autoMappings[el.variableName] = headers[matchIndex];
             }
           });
           setMappings(autoMappings);
@@ -64,23 +64,20 @@ export function MappingPage() {
   const handleSaveMapping = () => {
     if (!template || !mappingName) return;
     
-    const columnMappings = Object.entries(mappings).map(([variableName, columnIndex]) => ({
+    // Convert mappings (variableName -> columnName) to columnMappings array
+    const columnMappings = Object.entries(mappings).map(([variableName, columnName]) => ({
       variableName,
-      columnIndex,
-      columnName: csvHeaders[columnIndex],
+      columnIndex: csvHeaders.indexOf(columnName),
+      columnName,
     }));
 
-    const newMapping: Mapping = {
-      id: crypto.randomUUID(),
+    createMapping({
       name: mappingName,
       templateId: template.id,
       columnMappings,
       csvSample,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setSavedMappings([...savedMappings, newMapping]);
+    });
+    
     setIsSaveModalOpen(false);
     setMappingName('');
   };
@@ -144,14 +141,14 @@ export function MappingPage() {
                         onChange={(e) =>
                           setMappings({
                             ...mappings,
-                            [element.variableName]: parseInt(e.target.value),
+                            [element.variableName]: e.target.value,
                           })
                         }
                         className="w-full px-3 py-2 border rounded"
                       >
                         <option value="">-- Non mappé --</option>
                         {csvHeaders.map((header, index) => (
-                          <option key={header} value={index}>
+                          <option key={header} value={header}>
                             {header} {csvSample[index] ? `(${csvSample[index]})` : ''}
                           </option>
                         ))}
