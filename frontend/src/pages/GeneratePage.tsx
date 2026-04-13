@@ -6,9 +6,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../compone
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
+import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
 import { generateLabelPDF } from '../utils/pdfGenerator';
 import { LabelPreview } from '../components/LabelPreview';
+import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
 
@@ -24,6 +26,8 @@ export function GeneratePage() {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEANDebugger, setShowEANDebugger] = useState(false);
+  const [eanResults, setEanResults] = useState<EANValidationResult[]>([]);
 
   const [pdfOptions, setPdfOptions] = useState<PDFOptions>({
     pageSize: 'A4',
@@ -122,15 +126,8 @@ export function GeneratePage() {
     });
   };
 
-  const handleGeneratePDF = async () => {
+  const generatePDF = async () => {
     if (!template || csvData.length === 0) return;
-
-    // Debug: log mapping and first row
-    console.log('=== PDF Generation Debug ===');
-    console.log('Mapping:', mapping);
-    console.log('CSV Headers:', csvHeaders);
-    console.log('First row:', csvData[0]);
-    console.log('Template elements:', template.elements.map(e => e.variableName));
 
     setIsGenerating(true);
 
@@ -151,6 +148,23 @@ export function GeneratePage() {
     }
 
     setIsGenerating(false);
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!template || csvData.length === 0) return;
+
+    // Valider tous les codes EAN
+    const results = validateAllEANs(csvData, csvHeaders, template, mapping);
+    setEanResults(results);
+
+    const hasErrors = results.some(r => !r.valid);
+    if (hasErrors) {
+      setShowEANDebugger(true);
+      return;
+    }
+
+    // Si tout est valide, générer directement
+    await generatePDF();
   };
 
   return (
@@ -391,6 +405,16 @@ export function GeneratePage() {
           </label>
         </div>
       </Modal>
+
+      <EANDebugger
+        isOpen={showEANDebugger}
+        onClose={() => setShowEANDebugger(false)}
+        onContinue={() => {
+          setShowEANDebugger(false);
+          generatePDF();
+        }}
+        results={eanResults}
+      />
     </div>
   );
 }
