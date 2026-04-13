@@ -10,11 +10,11 @@ interface LabelPreviewProps {
   template: Template;
   rowData: string[];
   csvHeaders: string[];
-  mapping: Record<string, number>;
+  mapping: Record<string, string>; // variableName -> columnName
   scale?: number;
 }
 
-export function LabelPreview({ template, rowData, mapping, scale = 0.5 }: LabelPreviewProps) {
+export function LabelPreview({ template, rowData, csvHeaders, mapping, scale = 0.5 }: LabelPreviewProps) {
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
   const width = template.width * MM_TO_PX * scale;
   const height = template.height * MM_TO_PX * scale;
@@ -25,8 +25,14 @@ export function LabelPreview({ template, rowData, mapping, scale = 0.5 }: LabelP
       const newImages: Record<string, HTMLImageElement> = {};
 
       for (const element of template.elements) {
-        const colIndex = mapping[element.variableName];
-        const value = colIndex !== undefined ? rowData[colIndex] || '' : element.variableName;
+        const columnName = mapping[element.variableName];
+        let value = element.variableName;
+        if (columnName) {
+          const colIndex = csvHeaders.indexOf(columnName);
+          if (colIndex !== -1) {
+            value = rowData[colIndex] || '';
+          }
+        }
 
         if (element.type === 'barcode') {
           const canvas = document.createElement('canvas');
@@ -109,8 +115,10 @@ export function LabelPreview({ template, rowData, mapping, scale = 0.5 }: LabelP
   }, [template, rowData, mapping]);
 
   const getValue = (element: TemplateElement): string => {
-    const colIndex = mapping[element.variableName];
-    return colIndex !== undefined ? rowData[colIndex] || '' : element.variableName;
+    const columnName = mapping[element.variableName];
+    if (!columnName) return element.variableName;
+    const colIndex = csvHeaders.indexOf(columnName);
+    return colIndex !== -1 ? rowData[colIndex] || '' : element.variableName;
   };
 
   return (

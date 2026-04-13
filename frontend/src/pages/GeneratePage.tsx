@@ -19,7 +19,7 @@ export function GeneratePage() {
 
   const [csvData, setCsvData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
-  const [mapping, setMapping] = useState<Record<string, number>>({});
+  const [mapping, setMapping] = useState<Record<string, string>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -58,9 +58,10 @@ export function GeneratePage() {
 
     if (savedMapping) {
       const parsed = JSON.parse(savedMapping);
-      const mappingRecord: Record<string, number> = {};
+      // Store mapping by column name instead of index for flexibility
+      const mappingRecord: Record<string, string> = {};
       parsed.columnMappings.forEach((cm: any) => {
-        mappingRecord[cm.variableName] = cm.columnIndex;
+        mappingRecord[cm.variableName] = cm.columnName; // Store column name, not index
       });
       setMapping(mappingRecord);
     }

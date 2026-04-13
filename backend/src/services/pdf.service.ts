@@ -5,7 +5,7 @@ interface GeneratePDFOptions {
   template: Template & { elements: any[] };
   csvData: string[][];
   csvHeaders: string[];
-  mapping: Record<string, number>;
+  mapping: Record<string, string>;
   pdfOptions: PDFOptions;
   labelLayout: LabelLayout;
 }
@@ -60,8 +60,14 @@ export async function generateLabelPDF({
 
     // Draw elements
     for (const element of template.elements) {
-      const colIndex = mapping[element.variableName];
-      const value = colIndex !== undefined ? row[colIndex] || '' : element.variableName;
+      const columnName = mapping[element.variableName];
+      let value = element.variableName;
+      if (columnName) {
+        const colIndex = csvHeaders.indexOf(columnName);
+        if (colIndex !== -1) {
+          value = row[colIndex] || '';
+        }
+      }
 
       const elX = x + element.x;
       const elY = y + element.y;
