@@ -1,12 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import Database from 'better-sqlite3';
 import fs from 'fs';
-import { jsPDF } from 'jspdf';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 let mainWindow: BrowserWindow;
 let db: Database.Database;
@@ -99,7 +94,6 @@ function initDatabase() {
 ipcMain.handle('db:getTemplates', () => {
   const templates = db.prepare('SELECT * FROM templates ORDER BY updatedAt DESC').all();
   
-  // Load elements for each template
   return templates.map((template: any) => {
     const elements = db.prepare('SELECT * FROM template_elements WHERE templateId = ?').all(template.id);
     return {
@@ -249,26 +243,38 @@ ipcMain.handle('db:createMapping', (_, mapping: any) => {
   return { id, ...mapping, createdAt: now, updatedAt: now };
 });
 
+ipcMain.handle('db:updateMapping', (_, id: string, updates: any) => {
+  const now = new Date().toISOString();
+  
+  const stmt = db.prepare(`
+    UPDATE mappings SET 
+      name = COALESCE(?, name),
+      columnMappings = COALESCE(?, columnMappings),
+      csvSample = COALESCE(?, csvSample),
+      updatedAt = ?
+    WHERE id = ?
+  `);
+  
+  stmt.run(
+    updates.name,
+    updates.columnMappings ? JSON.stringify(updates.columnMappings) : null,
+    updates.csvSample ? JSON.stringify(updates.csvSample) : null,
+    now, id
+  );
+  
+  return { id, ...updates, updatedAt: now };
+});
+
 ipcMain.handle('db:deleteMapping', (_, id: string) => {
   db.prepare('DELETE FROM mappings WHERE id = ?').run(id);
   return { success: true };
 });
 
-// PDF Generation
-ipcMain.handle('pdf:generate', async (_, { template, csvData, csvHeaders, mapping, pdfOptions, labelLayout }) => {
-  // Import the PDF generator dynamically
-  const { generateLabelPDF } = await import('../frontend/src/utils/pdfGenerator.js');
-  
-  const doc = await generateLabelPDF({
-    template,
-    csvData,
-    csvHeaders,
-    mapping,
-    pdfOptions,
-    labelLayout,
-  });
-  
-  return doc.output('arraybuffer');
+// PDF Generation - simplified for now
+ipcMain.handle('pdf:generate', async (_, data: any) => {
+  // For now, return empty buffer - PDF generation will be done in renderer
+  // This avoids importing frontend code into main process
+  return new ArrayBuffer(0);
 });
 
 // File System - Save PDF
@@ -318,7 +324,7 @@ app.on('window-all-closed', () => {
 
 // Security: Prevent new window creation
 app.on('web-contents-created', (_, contents) => {
-  contents.on('new-window', (e) => {
-    e.preventDefault();
+  contents.setWindowOpenHandler(() => {
+    return { action: 'deny' };
   });
 });
