@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { dbService } from '../services/dbService';
 import type { Template, TemplateElement } from '../types';
 
@@ -20,6 +19,10 @@ interface EditorState {
   // Historique
   history: Template[];
   historyIndex: number;
+  
+  // Loading states
+  isLoading: boolean;
+  error: string | null;
 }
 
 interface EditorActions {
@@ -51,325 +54,310 @@ interface EditorActions {
   undo: () => void;
   redo: () => void;
   saveToHistory: () => void;
+  
+  // Error handling
+  clearError: () => void;
 }
 
 export const useEditorStore = create<EditorState & EditorActions>()(
-  persist(
-    (set, get) => ({
-      // State initial
-      template: null,
-      templates: [],
-      selectedElementId: null,
-      zoom: 1,
-      showGrid: true,
-      snapToGrid: false,
-      gridSize: 5,
-      history: [],
-      historyIndex: -1,
-      
-      // Actions
-      loadTemplates: async () => {
-        try {
-          const apiTemplates = await dbService.getTemplates();
-          // Merge with local templates (localStorage via Zustand persist)
-          const localTemplates = get().templates;
-          const merged = [...apiTemplates];
-          
-          // Add local templates that don't exist in API
-          for (const local of localTemplates) {
-            if (!merged.find((t) => t.id === local.id)) {
-              merged.push(local);
-            }
-          }
-          
-          set({ templates: merged });
-        } catch (error) {
-          console.error('Failed to load templates:', error);
-          // If API fails, keep local templates
-        }
-      },
-      
-      createTemplate: async (templateData) => {
-        try {
-          const newTemplate = await dbService.createTemplate(templateData);
-          set((state) => ({
-            templates: [...state.templates, newTemplate],
-            template: newTemplate,
-            selectedElementId: null,
-            history: [newTemplate],
-            historyIndex: 0,
-          }));
-        } catch (error) {
-          console.error('Failed to create template:', error);
-          throw error;
-        }
-      },
-      
-      loadTemplate: async (id) => {
-        // First check local state (from Zustand persist)
-        const localTemplate = get().templates.find((t) => t.id === id);
-        if (localTemplate) {
+  (set, get) => ({
+    // State initial
+    template: null,
+    templates: [],
+    selectedElementId: null,
+    zoom: 1,
+    showGrid: true,
+    snapToGrid: false,
+    gridSize: 5,
+    history: [],
+    historyIndex: -1,
+    isLoading: false,
+    error: null,
+    
+    // Actions
+    loadTemplates: async () => {
+      set({ isLoading: true, error: null });
+      try {
+        const templates = await dbService.getTemplates();
+        set({ templates, isLoading: false });
+      } catch (error) {
+        console.error('Failed to load templates:', error);
+        set({ error: 'Failed to load templates', isLoading: false });
+      }
+    },
+    
+    createTemplate: async (templateData) => {
+      set({ isLoading: true, error: null });
+      try {
+        const newTemplate = await dbService.createTemplate(templateData);
+        set((state) => ({
+          templates: [...state.templates, newTemplate],
+          template: newTemplate,
+          selectedElementId: null,
+          history: [newTemplate],
+          historyIndex: 0,
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.error('Failed to create template:', error);
+        set({ error: 'Failed to create template', isLoading: false });
+        throw error;
+      }
+    },
+    
+    loadTemplate: async (id) => {
+      set({ isLoading: true, error: null });
+      try {
+        const template = await dbService.getTemplate(id);
+        if (template) {
           set({
-            template: localTemplate,
+            template,
             selectedElementId: null,
-            history: [localTemplate],
+            history: [template],
             historyIndex: 0,
+            isLoading: false,
           });
-          return;
+        } else {
+          set({ error: 'Template not found', isLoading: false });
         }
-        
-        // If not in local state, try API
-        try {
-          const template = await dbService.getTemplate(id);
-          if (template) {
-            set({
-              template,
-              selectedElementId: null,
-              history: [template],
-              historyIndex: 0,
-            });
-          }
-        } catch (error) {
-          console.error('Failed to load template:', error);
-        }
-      },
+      } catch (error) {
+        console.error('Failed to load template:', error);
+        set({ error: 'Failed to load template', isLoading: false });
+      }
+    },
+    
+    updateTemplate: async (updates) => {
+      const { template } = get();
+      if (!template) return;
       
-      updateTemplate: async (updates) => {
-        const { template } = get();
-        if (!template) return;
-        
-        try {
-          const updated = await dbService.updateTemplate(template.id, updates);
-          get().saveToHistory();
-          
-          set({
-            template: updated,
-            templates: get().templates.map((t) =>
-              t.id === updated.id ? updated : t
-            ),
-          });
-        } catch (error) {
-          console.error('Failed to update template:', error);
-        }
-      },
-      
-      deleteTemplate: async (id) => {
-        try {
-          await dbService.deleteTemplate(id);
-          set((state) => ({
-            templates: state.templates.filter((t) => t.id !== id),
-            template: state.template?.id === id ? null : state.template,
-            selectedElementId: null,
-          }));
-        } catch (error) {
-          console.error('Failed to delete template:', error);
-        }
-      },
-      
-      duplicateTemplate: async (id) => {
-        const original = get().templates.find((t) => t.id === id);
-        if (!original) return;
-        
-        try {
-          const duplicate = await dbService.createTemplate({
-            ...original,
-            name: `${original.name} (copie)`,
-            elements: original.elements.map((el) => ({
-              ...el,
-              id: crypto.randomUUID(),
-            })),
-          });
-          
-          set((state) => ({
-            templates: [...state.templates, duplicate],
-          }));
-        } catch (error) {
-          console.error('Failed to duplicate template:', error);
-        }
-      },
-      
-      addElement: (elementData) => {
-        const { template } = get();
-        if (!template) return;
-        
-        const newElement: TemplateElement = {
-          ...elementData,
-          id: crypto.randomUUID(),
-          zIndex: template.elements.length,
-        };
-        
+      set({ isLoading: true, error: null });
+      try {
+        const updated = await dbService.updateTemplate(template.id, updates);
         get().saveToHistory();
         
-        const updated: Template = {
-          ...template,
-          elements: [...template.elements, newElement],
-          updatedAt: new Date().toISOString(),
-        };
-        
         set({
           template: updated,
           templates: get().templates.map((t) =>
             t.id === updated.id ? updated : t
           ),
-          selectedElementId: newElement.id,
+          isLoading: false,
         });
-      },
+      } catch (error) {
+        console.error('Failed to update template:', error);
+        set({ error: 'Failed to update template', isLoading: false });
+      }
+    },
+    
+    deleteTemplate: async (id) => {
+      set({ isLoading: true, error: null });
+      try {
+        await dbService.deleteTemplate(id);
+        set((state) => ({
+          templates: state.templates.filter((t) => t.id !== id),
+          template: state.template?.id === id ? null : state.template,
+          selectedElementId: null,
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.error('Failed to delete template:', error);
+        set({ error: 'Failed to delete template', isLoading: false });
+      }
+    },
+    
+    duplicateTemplate: async (id) => {
+      const original = get().templates.find((t) => t.id === id);
+      if (!original) return;
       
-      updateElement: (id, updates) => {
-        const { template } = get();
-        if (!template) return;
-        
-        const updated: Template = {
-          ...template,
-          elements: template.elements.map((el) =>
-            el.id === id ? { ...el, ...updates } : el
-          ),
-          updatedAt: new Date().toISOString(),
-        };
-        
-        set({
-          template: updated,
-          templates: get().templates.map((t) =>
-            t.id === updated.id ? updated : t
-          ),
+      set({ isLoading: true, error: null });
+      try {
+        const duplicate = await dbService.createTemplate({
+          ...original,
+          name: `${original.name} (copie)`,
+          elements: original.elements.map((el) => ({
+            ...el,
+            id: crypto.randomUUID(),
+          })),
         });
-      },
+        
+        set((state) => ({
+          templates: [...state.templates, duplicate],
+          isLoading: false,
+        }));
+      } catch (error) {
+        console.error('Failed to duplicate template:', error);
+        set({ error: 'Failed to duplicate template', isLoading: false });
+      }
+    },
+    
+    addElement: (elementData) => {
+      const { template } = get();
+      if (!template) return;
       
-      removeElement: (id) => {
-        const { template } = get();
-        if (!template) return;
-        
-        get().saveToHistory();
-        
-        const updated: Template = {
-          ...template,
-          elements: template.elements.filter((el) => el.id !== id),
-          updatedAt: new Date().toISOString(),
-        };
-        
+      const newElement: TemplateElement = {
+        ...elementData,
+        id: crypto.randomUUID(),
+        zIndex: template.elements.length,
+      };
+      
+      get().saveToHistory();
+      
+      const updated: Template = {
+        ...template,
+        elements: [...template.elements, newElement],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementId: newElement.id,
+      });
+      
+      // Auto-save to backend
+      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+    },
+    
+    updateElement: (id, updates) => {
+      const { template } = get();
+      if (!template) return;
+      
+      const updated: Template = {
+        ...template,
+        elements: template.elements.map((el) =>
+          el.id === id ? { ...el, ...updates } : el
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({ template: updated });
+      
+      // Auto-save to backend
+      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+    },
+    
+    removeElement: (id) => {
+      const { template } = get();
+      if (!template) return;
+      
+      get().saveToHistory();
+      
+      const updated: Template = {
+        ...template,
+        elements: template.elements.filter((el) => el.id !== id),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementId: null,
+      });
+      
+      // Auto-save to backend
+      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+    },
+    
+    selectElement: (id) => set({ selectedElementId: id }),
+    
+    reorderElements: (elementIds) => {
+      const { template } = get();
+      if (!template) return;
+      
+      const reordered = elementIds
+        .map((id) => template.elements.find((el) => el.id === id))
+        .filter((el): el is TemplateElement => el !== undefined);
+      
+      const updated: Template = {
+        ...template,
+        elements: reordered.map((el, i) => ({ ...el, zIndex: i })),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({ template: updated });
+      
+      // Auto-save to backend
+      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+    },
+    
+    setZoom: (zoom) => set({ zoom: Math.max(0.25, Math.min(3, zoom)) }),
+    setShowGrid: (show) => set({ showGrid: show }),
+    setSnapToGrid: (snap) => set({ snapToGrid: snap }),
+    
+    alignElements: (alignment) => {
+      const { template, selectedElementId } = get();
+      if (!template || !selectedElementId) return;
+      
+      const selectedEl = template.elements.find((el) => el.id === selectedElementId);
+      if (!selectedEl) return;
+      
+      get().saveToHistory();
+      
+      let updates: Partial<TemplateElement> = {};
+      
+      switch (alignment) {
+        case 'left':
+          updates = { x: 0 };
+          break;
+        case 'center':
+          updates = { x: (template.width - selectedEl.width) / 2 };
+          break;
+        case 'right':
+          updates = { x: template.width - selectedEl.width };
+          break;
+        case 'top':
+          updates = { y: 0 };
+          break;
+        case 'middle':
+          updates = { y: (template.height - selectedEl.height) / 2 };
+          break;
+        case 'bottom':
+          updates = { y: template.height - selectedEl.height };
+          break;
+      }
+      
+      get().updateElement(selectedElementId, updates);
+    },
+    
+    distributeElements: (axis) => {
+      // TODO: Implement multi-selection distribution
+      console.log('Distribute', axis);
+    },
+    
+    saveToHistory: () => {
+      const { template, history, historyIndex } = get();
+      if (!template) return;
+      
+      const newHistory = history.slice(0, historyIndex + 1);
+      newHistory.push(template);
+      
+      set({
+        history: newHistory.slice(-50),
+        historyIndex: newHistory.length - 1,
+      });
+    },
+    
+    undo: () => {
+      const { history, historyIndex } = get();
+      if (historyIndex > 0) {
+        const newIndex = historyIndex - 1;
         set({
-          template: updated,
-          templates: get().templates.map((t) =>
-            t.id === updated.id ? updated : t
-          ),
+          template: history[newIndex],
+          historyIndex: newIndex,
           selectedElementId: null,
         });
-      },
-      
-      selectElement: (id) => set({ selectedElementId: id }),
-      
-      reorderElements: (elementIds) => {
-        const { template } = get();
-        if (!template) return;
-        
-        const reordered = elementIds
-          .map((id) => template.elements.find((el) => el.id === id))
-          .filter((el): el is TemplateElement => el !== undefined);
-        
-        const updated: Template = {
-          ...template,
-          elements: reordered.map((el, i) => ({ ...el, zIndex: i })),
-          updatedAt: new Date().toISOString(),
-        };
-        
+      }
+    },
+    
+    redo: () => {
+      const { history, historyIndex } = get();
+      if (historyIndex < history.length - 1) {
+        const newIndex = historyIndex + 1;
         set({
-          template: updated,
-          templates: get().templates.map((t) =>
-            t.id === updated.id ? updated : t
-          ),
+          template: history[newIndex],
+          historyIndex: newIndex,
+          selectedElementId: null,
         });
-      },
-      
-      setZoom: (zoom) => set({ zoom: Math.max(0.25, Math.min(3, zoom)) }),
-      setShowGrid: (show) => set({ showGrid: show }),
-      setSnapToGrid: (snap) => set({ snapToGrid: snap }),
-      
-      alignElements: (alignment) => {
-        const { template, selectedElementId } = get();
-        if (!template || !selectedElementId) return;
-        
-        const selectedEl = template.elements.find((el) => el.id === selectedElementId);
-        if (!selectedEl) return;
-        
-        get().saveToHistory();
-        
-        let updates: Partial<TemplateElement> = {};
-        
-        switch (alignment) {
-          case 'left':
-            updates = { x: 0 };
-            break;
-          case 'center':
-            updates = { x: (template.width - selectedEl.width) / 2 };
-            break;
-          case 'right':
-            updates = { x: template.width - selectedEl.width };
-            break;
-          case 'top':
-            updates = { y: 0 };
-            break;
-          case 'middle':
-            updates = { y: (template.height - selectedEl.height) / 2 };
-            break;
-          case 'bottom':
-            updates = { y: template.height - selectedEl.height };
-            break;
-        }
-        
-        get().updateElement(selectedElementId, updates);
-      },
-      
-      distributeElements: (axis) => {
-        // TODO: Implement multi-selection distribution
-        console.log('Distribute', axis);
-      },
-      
-      saveToHistory: () => {
-        const { template, history, historyIndex } = get();
-        if (!template) return;
-        
-        const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push(template);
-        
-        set({
-          history: newHistory.slice(-50),
-          historyIndex: newHistory.length - 1,
-        });
-      },
-      
-      undo: () => {
-        const { history, historyIndex } = get();
-        if (historyIndex > 0) {
-          const newIndex = historyIndex - 1;
-          set({
-            template: history[newIndex],
-            historyIndex: newIndex,
-            selectedElementId: null,
-          });
-        }
-      },
-      
-      redo: () => {
-        const { history, historyIndex } = get();
-        if (historyIndex < history.length - 1) {
-          const newIndex = historyIndex + 1;
-          set({
-            template: history[newIndex],
-            historyIndex: newIndex,
-            selectedElementId: null,
-          });
-        }
-      },
-    }),
-    {
-      name: 'boldlabels-storage',
-      partialize: (state) => ({
-        templates: state.templates,
-        zoom: state.zoom,
-        showGrid: state.showGrid,
-        snapToGrid: state.snapToGrid,
-        gridSize: state.gridSize,
-      }),
-    }
-  )
+      }
+    },
+    
+    clearError: () => set({ error: null }),
+  })
 );

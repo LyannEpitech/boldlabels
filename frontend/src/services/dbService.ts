@@ -103,6 +103,20 @@ export const dbService = {
     }
   },
 
+  async updateMapping(id: string, updates: Partial<Mapping>): Promise<Mapping> {
+    if (isElectron() && electronAPI) {
+      return electronAPI.updateMapping(id, updates);
+    } else {
+      const res = await fetch(`/api/mappings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Failed to update mapping');
+      return res.json();
+    }
+  },
+
   async deleteMapping(id: string): Promise<void> {
     if (isElectron() && electronAPI) {
       await electronAPI.deleteMapping(id);
