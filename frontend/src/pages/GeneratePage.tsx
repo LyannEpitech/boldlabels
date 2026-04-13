@@ -8,7 +8,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
-import { generateLabelPDF } from '../utils/pdfGenerator';
+import { pdfService } from '../services/dbService';
 import { LabelPreview } from '../components/LabelPreview';
 import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
@@ -132,16 +132,14 @@ export function GeneratePage() {
     setIsGenerating(true);
 
     try {
-      const doc = await generateLabelPDF({
+      await pdfService.generateAndSavePDF(
         template,
         csvData,
         csvHeaders,
         mapping,
         pdfOptions,
-        labelLayout,
-      });
-
-      doc.save(`${template.name}_labels.pdf`);
+        labelLayout
+      );
     } catch (error) {
       console.error('PDF generation failed:', error);
       alert('Erreur lors de la génération du PDF');

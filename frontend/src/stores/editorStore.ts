@@ -24,11 +24,12 @@ interface EditorState {
 
 interface EditorActions {
   // Templates
-  createTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  loadTemplate: (id: string) => void;
-  updateTemplate: (updates: Partial<Template>) => void;
-  deleteTemplate: (id: string) => void;
-  duplicateTemplate: (id: string) => void;
+  loadTemplates: () => Promise<void>;
+  createTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  loadTemplate: (id: string) => Promise<void>;
+  updateTemplate: (updates: Partial<Template>) => Promise<void>;
+  deleteTemplate: (id: string) => Promise<void>;
+  duplicateTemplate: (id: string) => Promise<void>;
   
   // Éléments
   addElement: (element: Omit<TemplateElement, 'id' | 'zIndex'>) => void;
@@ -67,84 +68,99 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       historyIndex: -1,
       
       // Actions
-      createTemplate: (templateData) => {
-        const now = new Date().toISOString();
-        const newTemplate: Template = {
-          ...templateData,
-          id: crypto.randomUUID(),
-          createdAt: now,
-          updatedAt: now,
-        };
-        
-        set((state) => ({
-          templates: [...state.templates, newTemplate],
-          template: newTemplate,
-          selectedElementId: null,
-          history: [newTemplate],
-          historyIndex: 0,
-        }));
-      },
-      
-      loadTemplate: (id) => {
-        const template = get().templates.find((t) => t.id === id);
-        if (template) {
-          set({
-            template,
-            selectedElementId: null,
-            history: [template],
-            historyIndex: 0,
-          });
+      loadTemplates: async () => {
+        try {
+          const templates = await dbService.getTemplates();
+          set({ templates });
+        } catch (error) {
+          console.error('Failed to load templates:', error);
         }
       },
       
-      updateTemplate: (updates) => {
+      createTemplate: async (templateData) => {
+        try {
+          const newTemplate = await dbService.createTemplate(templateData);
+          set((state) => ({
+            templates: [...state.templates, newTemplate],
+            template: newTemplate,
+            selectedElementId: null,
+            history: [newTemplate],
+            historyIndex: 0,
+          }));
+        } catch (error) {
+          console.error('Failed to create template:', error);
+          throw error;
+        }
+      },
+      
+      loadTemplate: async (id) => {
+        try {
+          const template = await dbService.getTemplate(id);
+          if (template) {
+            set({
+              template,
+              selectedElementId: null,
+              history: [template],
+              historyIndex: 0,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load template:', error);
+        }
+      },
+      
+      updateTemplate: async (updates) => {
         const { template } = get();
         if (!template) return;
         
-        const updated: Template = {
-          ...template,
-          ...updates,
-          updatedAt: new Date().toISOString(),
-        };
-        
-        get().saveToHistory();
-        
-        set({
-          template: updated,
-          templates: get().templates.map((t) =>
-            t.id === updated.id ? updated : t
-          ),
-        });
+        try {
+          const updated = await dbService.updateTemplate(template.id, updates);
+          get().saveToHistory();
+          
+          set({
+            template: updated,
+            templates: get().templates.map((t) =>
+              t.id === updated.id ? updated : t
+            ),
+          });
+        } catch (error) {
+          console.error('Failed to update template:', error);
+        }
       },
       
-      deleteTemplate: (id) => {
-        set((state) => ({
-          templates: state.templates.filter((t) => t.id !== id),
-          template: state.template?.id === id ? null : state.template,
-          selectedElementId: null,
-        }));
+      deleteTemplate: async (id) => {
+        try {
+          await dbService.deleteTemplate(id);
+          set((state) => ({
+            templates: state.templates.filter((t) => t.id !== id),
+            template: state.template?.id === id ? null : state.template,
+            selectedElementId: null,
+          }));
+        } catch (error) {
+          console.error('Failed to delete template:', error);
+        }
       },
       
-      duplicateTemplate: (id) => {
+      duplicateTemplate: async (id) => {
         const original = get().templates.find((t) => t.id === id);
         if (!original) return;
         
-        const now = new Date().toISOString();
-        const duplicate: Template = {
-          ...original,
-          id: crypto.randomUUID(),
-          name: `${original.name} (copie)`,
-          createdAt: now,
-          updatedAt: now,
-          elements: original.elements.map((el) => ({
-            ...el,
-            id: crypto.randomUUID(),
-          })),
-        };
-        
-        set((state) => ({
-          templates: [...state.templates, duplicate],
-        }));
+        try {
+          const duplicate = await dbService.createTemplate({
+            ...original,
+            name: `${original.name} (copie)`,
+            elements: original.elements.map((el) => ({
+              ...el,
+              id: crypto.randomUUID(),
+            })),
+          });
+          
+          set((state) => ({
+            templates: [...state.templates, duplicate],
+          }));
+        } catch (error) {
+          console.error('Failed to duplicate template:', error);
+        }
       },
       
       addElement: (elementData) => {

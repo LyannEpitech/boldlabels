@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Copy, Trash2, Edit3, FileText, Download, Settings } from 'lucide-react';
 
 const PRESETS = [
@@ -16,20 +16,26 @@ const PRESETS = [
 ];
 
 export function DashboardPage() {
-  const { templates, createTemplate, deleteTemplate, duplicateTemplate, loadTemplate } = useEditorStore();
-  const { mappings, deleteMapping } = useMappingStore();
+  const { templates, loadTemplates, createTemplate, deleteTemplate, duplicateTemplate, loadTemplate } = useEditorStore();
+  const { mappings, loadMappings, deleteMapping } = useMappingStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [customWidth, setCustomWidth] = useState(50);
   const [customHeight, setCustomHeight] = useState(25);
 
-  const handleCreate = () => {
+  // Load data on mount
+  useEffect(() => {
+    loadTemplates();
+    loadMappings();
+  }, [loadTemplates, loadMappings]);
+
+  const handleCreate = async () => {
     const preset = PRESETS.find((p) => p.name === selectedPreset);
     const width = preset ? preset.width : customWidth;
     const height = preset ? preset.height : customHeight;
 
-    createTemplate({
+    await createTemplate({
       name: newTemplateName || 'Nouveau template',
       description: '',
       width,
