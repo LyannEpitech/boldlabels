@@ -7,6 +7,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
 import { generateLabelPDF } from '../utils/pdfGenerator';
+import { LabelPreview } from '../components/LabelPreview';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
 
@@ -308,23 +309,35 @@ export function GeneratePage() {
                   <CardTitle>Aperçu</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div
-                    className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
-                    style={{
-                      aspectRatio: pdfOptions.orientation === 'portrait' ? 210 / 297 : 297 / 210,
-                    }}
-                  >
-                    <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                      <FileText size={32} className="text-gray-400 mb-2" />
-                      <p className="text-sm font-medium">{csvData.length} étiquettes</p>
-                      <p className="text-xs text-gray-500">
-                        {labelLayout.labelsPerRow}×{labelLayout.labelsPerColumn} par page
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {Math.ceil(csvData.length / labelLayout.labelsPerPage)} pages
-                      </p>
+                  {template && csvData.length > 0 ? (
+                    <div className="bg-white rounded border overflow-hidden flex items-center justify-center p-4">
+                      <LabelPreview
+                        template={template}
+                        rowData={csvData[0]}
+                        csvHeaders={csvHeaders}
+                        mapping={mapping}
+                        scale={0.8}
+                      />
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
+                      style={{
+                        aspectRatio: pdfOptions.orientation === 'portrait' ? 210 / 297 : 297 / 210,
+                      }}
+                    >
+                      <div className="w-full h-full flex flex-col items-center justify-center text-center">
+                        <FileText size={32} className="text-gray-400 mb-2" />
+                        <p className="text-sm font-medium">{csvData.length} étiquettes</p>
+                        <p className="text-xs text-gray-500">
+                          {labelLayout.labelsPerRow}×{labelLayout.labelsPerColumn} par page
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {Math.ceil(csvData.length / labelLayout.labelsPerPage)} pages
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
                 <CardFooter>
                   <Button
