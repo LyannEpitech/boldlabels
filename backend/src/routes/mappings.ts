@@ -63,7 +63,7 @@ export function createMappingRoutes(prisma: PrismaClient) {
         data: {
           name: validated.name,
           templateId: validated.templateId,
-          csvSample: validated.csvSample || [],
+          csvSample: validated.csvSample ? JSON.stringify(validated.csvSample) : null,
           columnMappings: {
             create: validatedMappings,
           },
@@ -100,7 +100,7 @@ export function createMappingRoutes(prisma: PrismaClient) {
           where: { id: req.params.id },
           data: {
             name: validated.name,
-            csvSample: validated.csvSample || [],
+            csvSample: validated.csvSample ? JSON.stringify(validated.csvSample) : null,
             columnMappings: {
               create: validatedMappings,
             },
@@ -114,6 +114,48 @@ export function createMappingRoutes(prisma: PrismaClient) {
       if (error instanceof Error && error.name === 'ZodError') {
         return res.status(400).json({ error: 'Validation failed', details: error });
       }
+      res.status(500).json({ error: 'Failed to update mapping' });
+    }
+  });
+
+  // PATCH /api/mappings/:id - Partial update mapping
+  router.patch('/:id', async (req, res) => {
+    try {
+      const { name, csvSample, columnMappings } = req.body;
+      
+      const mapping = await prisma.$transaction(async (tx) => {
+        // If columnMappings provided, replace them
+        if (columnMappings) {
+          await tx.columnMapping.deleteMany({
+            where: { mappingId: req.params.id },
+          });
+          
+          return tx.mapping.update({
+            where: { id: req.params.id },
+            data: {
+              ...(name && { name }),
+              ...(csvSample && { csvSample: JSON.stringify(csvSample) }),
+              columnMappings: {
+                create: columnMappings,
+              },
+            },
+            include: { columnMappings: true },
+          });
+        }
+        
+        // Simple update without column mappings
+        return tx.mapping.update({
+          where: { id: req.params.id },
+          data: {
+            ...(name && { name }),
+            ...(csvSample && { csvSample: JSON.stringify(csvSample) }),
+          },
+          include: { columnMappings: true },
+        });
+      });
+      
+      res.json(mapping);
+    } catch (error) {
       res.status(500).json({ error: 'Failed to update mapping' });
     }
   });
