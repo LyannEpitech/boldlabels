@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Text, Transformer } from 'react-konva';
 import Konva from 'konva';
+import { useEditorStore } from '../../../stores/editorStore';
 import type { TemplateElement, TextProperties } from '../../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -20,6 +21,7 @@ export function TextElement({ element, isSelected, onSelect, onChange }: TextEle
   const shapeRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const props = element.properties as TextProperties;
+  const { snapToGrid, gridSize } = useEditorStore();
   
   useEffect(() => {
     if (isSelected && transformerRef.current && shapeRef.current) {
@@ -63,10 +65,13 @@ export function TextElement({ element, isSelected, onSelect, onChange }: TextEle
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            x: e.target.x() / MM_TO_PX,
-            y: e.target.y() / MM_TO_PX,
-          });
+          let x = e.target.x() / MM_TO_PX;
+          let y = e.target.y() / MM_TO_PX;
+          if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+          }
+          onChange({ x, y });
         }}
         onTransformEnd={(e) => {
           const node = e.target;

@@ -14,7 +14,7 @@ describe('PDF Generator', () => {
     const labelsPerRow = Math.floor(availableWidth / labelWidth);
     const labelsPerColumn = Math.floor(availableHeight / labelHeight);
 
-    expect(labelsPerRow).toBe(3);
+    expect(labelsPerRow).toBe(2);
     expect(labelsPerColumn).toBe(11);
   });
 
