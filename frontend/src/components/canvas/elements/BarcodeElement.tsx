@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Rect, Transformer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
+import { useEditorStore } from '../../../stores/editorStore';
 import type { TemplateElement, BarcodeProperties } from '../../../types';
 import JsBarcode from 'jsbarcode';
 
@@ -19,8 +20,8 @@ interface BarcodeElementProps {
 
 export function BarcodeElement({ element, isSelected, onSelect, onChange }: BarcodeElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
-
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { snapToGrid, gridSize } = useEditorStore();
   const [barcodeImage, setBarcodeImage] = useState<HTMLImageElement | null>(null);
   const props = element.properties as BarcodeProperties;
   
@@ -76,10 +77,13 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange }: Barc
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            x: e.target.x() / MM_TO_PX,
-            y: e.target.y() / MM_TO_PX,
-          });
+          let x = e.target.x() / MM_TO_PX;
+          let y = e.target.y() / MM_TO_PX;
+          if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+          }
+          onChange({ x, y });
         }}
         onTransformEnd={(e) => {
           const node = e.target;

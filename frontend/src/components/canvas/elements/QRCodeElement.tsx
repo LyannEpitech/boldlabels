@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Rect, Transformer, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
+import { useEditorStore } from '../../../stores/editorStore';
 import type { TemplateElement, QRCodeProperties } from '../../../types';
 import QRCode from 'qrcode';
 
@@ -20,6 +21,7 @@ interface QRCodeElementProps {
 export function QRCodeElement({ element, isSelected, onSelect, onChange }: QRCodeElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { snapToGrid, gridSize } = useEditorStore();
   const [qrImage, setQrImage] = useState<HTMLImageElement | null>(null);
   const props = element.properties as QRCodeProperties;
   
@@ -76,10 +78,13 @@ export function QRCodeElement({ element, isSelected, onSelect, onChange }: QRCod
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            x: e.target.x() / MM_TO_PX,
-            y: e.target.y() / MM_TO_PX,
-          });
+          let x = e.target.x() / MM_TO_PX;
+          let y = e.target.y() / MM_TO_PX;
+          if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+          }
+          onChange({ x, y });
         }}
         onTransformEnd={(e) => {
           const node = e.target;

@@ -33,6 +33,11 @@ export function Toolbar() {
   const canRedo = historyIndex < history.length - 1;
   
   const handleAddElement = (type: typeof tools[0]['type']) => {
+    // Check max elements limit (50)
+    if (template && template.elements.length >= 50) {
+      alert('Limite atteinte : maximum 50 éléments par template');
+      return;
+    }
     const defaults: Record<string, any> = {
       text: {
         properties: {

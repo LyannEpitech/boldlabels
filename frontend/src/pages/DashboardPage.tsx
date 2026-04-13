@@ -93,7 +93,11 @@ export function DashboardPage() {
                     </Button>
                   </Link>
                   <Button variant="secondary" leftIcon={<Copy size={16} />} onClick={() => duplicateTemplate(template.id)} />
-                  <Button variant="danger" leftIcon={<Trash2 size={16} />} onClick={() => deleteTemplate(template.id)} />
+                  <Button variant="danger" leftIcon={<Trash2 size={16} />} onClick={() => {
+                    if (confirm('Êtes-vous sûr de vouloir supprimer ce template ?')) {
+                      deleteTemplate(template.id);
+                    }
+                  }} />
                 </CardFooter>
               </Card>
             ))}

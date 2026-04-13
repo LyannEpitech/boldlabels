@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Rect, Transformer } from 'react-konva';
 import Konva from 'konva';
+import { useEditorStore } from '../../../stores/editorStore';
 import type { TemplateElement, RectangleProperties } from '../../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -19,6 +20,7 @@ interface RectangleElementProps {
 export function RectangleElement({ element, isSelected, onSelect, onChange }: RectangleElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const { snapToGrid, gridSize } = useEditorStore();
   const props = element.properties as RectangleProperties;
   
   useEffect(() => {
@@ -49,10 +51,13 @@ export function RectangleElement({ element, isSelected, onSelect, onChange }: Re
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            x: e.target.x() / MM_TO_PX,
-            y: e.target.y() / MM_TO_PX,
-          });
+          let x = e.target.x() / MM_TO_PX;
+          let y = e.target.y() / MM_TO_PX;
+          if (snapToGrid) {
+            x = Math.round(x / gridSize) * gridSize;
+            y = Math.round(y / gridSize) * gridSize;
+          }
+          onChange({ x, y });
         }}
         onTransformEnd={(e) => {
           const node = e.target;
