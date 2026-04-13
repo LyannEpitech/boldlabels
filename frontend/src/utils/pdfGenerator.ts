@@ -3,6 +3,19 @@ import type { Template, TemplateElement, PDFOptions, LabelLayout } from '../type
 
 const MM_TO_PT = 2.83465;
 
+function withRotation(
+  _doc: jsPDF,
+  _element: TemplateElement,
+  _x: number,
+  _y: number,
+  callback: () => void
+): void {
+  // jsPDF doesn't support rotation for individual elements easily
+  // Rotation is applied via transformation matrix in advanced usage
+  // For now, we skip rotation in PDF output or apply it via coordinate transformation
+  callback();
+}
+
 interface GeneratePDFOptions {
   template: Template;
   csvData: string[][];
@@ -119,6 +132,8 @@ function drawTextElement(
   y: number
 ): void {
   const props = element.properties as any;
+  
+  // Rotation placeholder - jsPDF rotation requires advanced matrix transformations
 
   // Map font family
   const fontMap: Record<string, string> = {
@@ -168,6 +183,9 @@ function drawTextElement(
     align: align as any,
     maxWidth: element.width,
   });
+  
+  // Restore state
+  doc.restoreGraphicsState();
 }
 
 async function drawBarcodeElement(
@@ -196,15 +214,19 @@ async function drawBarcodeElement(
     });
 
     const imgData = canvas.toDataURL('image/png');
-    doc.addImage(imgData, 'PNG', x, y, element.width, element.height);
+    withRotation(doc, element, x, y, () => {
+      doc.addImage(imgData, 'PNG', x, y, element.width, element.height);
+    });
   } catch (e) {
     // Fallback: draw placeholder
-    doc.setDrawColor('#cccccc');
-    doc.setFillColor('#f5f5f5');
-    doc.rect(x, y, element.width, element.height, 'FD');
-    doc.setTextColor('#999999');
-    doc.setFontSize(8);
-    doc.text('Invalid barcode', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    withRotation(doc, element, x, y, () => {
+      doc.setDrawColor('#cccccc');
+      doc.setFillColor('#f5f5f5');
+      doc.rect(x, y, element.width, element.height, 'FD');
+      doc.setTextColor('#999999');
+      doc.setFontSize(8);
+      doc.text('Invalid barcode', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    });
   }
 }
 
@@ -229,15 +251,19 @@ async function drawQRCodeElement(
       errorCorrectionLevel: (props.errorCorrectionLevel || 'M') as any,
     });
 
-    doc.addImage(dataUrl, 'PNG', x, y, element.width, element.height);
+    withRotation(doc, element, x, y, () => {
+      doc.addImage(dataUrl, 'PNG', x, y, element.width, element.height);
+    });
   } catch (e) {
     // Fallback: draw placeholder
-    doc.setDrawColor('#cccccc');
-    doc.setFillColor('#f5f5f5');
-    doc.rect(x, y, element.width, element.height, 'FD');
-    doc.setTextColor('#999999');
-    doc.setFontSize(8);
-    doc.text('Invalid QR', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    withRotation(doc, element, x, y, () => {
+      doc.setDrawColor('#cccccc');
+      doc.setFillColor('#f5f5f5');
+      doc.rect(x, y, element.width, element.height, 'FD');
+      doc.setTextColor('#999999');
+      doc.setFontSize(8);
+      doc.text('Invalid QR', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    });
   }
 }
 
@@ -252,12 +278,14 @@ async function drawImageElement(
 
   if (!props.src && !value) {
     // Draw placeholder
-    doc.setDrawColor('#cccccc');
-    doc.setFillColor('#f5f5f5');
-    doc.rect(x, y, element.width, element.height, 'FD');
-    doc.setTextColor('#999999');
-    doc.setFontSize(8);
-    doc.text('No image', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    withRotation(doc, element, x, y, () => {
+      doc.setDrawColor('#cccccc');
+      doc.setFillColor('#f5f5f5');
+      doc.rect(x, y, element.width, element.height, 'FD');
+      doc.setTextColor('#999999');
+      doc.setFontSize(8);
+      doc.text('No image', x + element.width / 2, y + element.height / 2, { align: 'center' });
+    });
     return;
   }
 
@@ -267,20 +295,26 @@ async function drawImageElement(
     // Check if it's a base64 image or URL
     if (src.startsWith('data:image')) {
       const format = src.includes('png') ? 'PNG' : 'JPEG';
-      doc.addImage(src, format, x, y, element.width, element.height);
+      withRotation(doc, element, x, y, () => {
+        doc.addImage(src, format, x, y, element.width, element.height);
+      });
     } else if (src.startsWith('http')) {
       // For external URLs, we'd need to fetch and convert
       // For now, draw placeholder with URL
-      doc.setDrawColor('#cccccc');
-      doc.rect(x, y, element.width, element.height, 'S');
-      doc.setFontSize(6);
-      doc.text('External image', x + 2, y + element.height / 2);
+      withRotation(doc, element, x, y, () => {
+        doc.setDrawColor('#cccccc');
+        doc.rect(x, y, element.width, element.height, 'S');
+        doc.setFontSize(6);
+        doc.text('External image', x + 2, y + element.height / 2);
+      });
     }
   } catch (e) {
     // Fallback
-    doc.setDrawColor('#ff0000');
-    doc.setFillColor('#ffeeee');
-    doc.rect(x, y, element.width, element.height, 'FD');
+    withRotation(doc, element, x, y, () => {
+      doc.setDrawColor('#ff0000');
+      doc.setFillColor('#ffeeee');
+      doc.rect(x, y, element.width, element.height, 'FD');
+    });
   }
 }
 
@@ -292,26 +326,28 @@ function drawRectangleElement(
 ): void {
   const props = element.properties as any;
 
-  // Parse fill color
-  const fillColor = props.fillColor || 'transparent';
-  if (fillColor !== 'transparent') {
-    const r = parseInt(fillColor.slice(1, 3), 16);
-    const g = parseInt(fillColor.slice(3, 5), 16);
-    const b = parseInt(fillColor.slice(5, 7), 16);
-    doc.setFillColor(r, g, b);
-  }
+  withRotation(doc, element, x, y, () => {
+    // Parse fill color
+    const fillColor = props.fillColor || 'transparent';
+    if (fillColor !== 'transparent') {
+      const r = parseInt(fillColor.slice(1, 3), 16);
+      const g = parseInt(fillColor.slice(3, 5), 16);
+      const b = parseInt(fillColor.slice(5, 7), 16);
+      doc.setFillColor(r, g, b);
+    }
 
-  // Parse stroke color
-  const strokeColor = props.strokeColor || '#000000';
-  const sr = parseInt(strokeColor.slice(1, 3), 16);
-  const sg = parseInt(strokeColor.slice(3, 5), 16);
-  const sb = parseInt(strokeColor.slice(5, 7), 16);
-  doc.setDrawColor(sr, sg, sb);
-  doc.setLineWidth(props.strokeWidth || 1);
+    // Parse stroke color
+    const strokeColor = props.strokeColor || '#000000';
+    const sr = parseInt(strokeColor.slice(1, 3), 16);
+    const sg = parseInt(strokeColor.slice(3, 5), 16);
+    const sb = parseInt(strokeColor.slice(5, 7), 16);
+    doc.setDrawColor(sr, sg, sb);
+    doc.setLineWidth(props.strokeWidth || 1);
 
-  if (fillColor !== 'transparent') {
-    doc.rect(x, y, element.width, element.height, 'FD');
-  } else {
-    doc.rect(x, y, element.width, element.height, 'S');
-  }
+    if (fillColor !== 'transparent') {
+      doc.rect(x, y, element.width, element.height, 'FD');
+    } else {
+      doc.rect(x, y, element.width, element.height, 'S');
+    }
+  });
 }
