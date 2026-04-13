@@ -101,8 +101,12 @@ async function drawElement(
 ): Promise<void> {
   const columnName = mapping[element.variableName];
   let value = element.variableName;
+  
+  console.log(`Element ${element.variableName}: columnName=${columnName}, csvHeaders=${_csvHeaders}`);
+  
   if (columnName) {
     const colIndex = _csvHeaders.indexOf(columnName);
+    console.log(`  -> colIndex=${colIndex}, row[${colIndex}]=${row[colIndex]}`);
     if (colIndex !== -1) {
       value = row[colIndex] || '';
     }
