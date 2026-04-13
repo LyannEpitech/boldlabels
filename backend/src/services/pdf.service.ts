@@ -1,5 +1,19 @@
 import { jsPDF } from 'jspdf';
-import type { Template, PDFOptions, LabelLayout } from '@prisma/client';
+import type { Template } from '@prisma/client';
+
+interface PDFOptions {
+  pageSize: string;
+  orientation: 'portrait' | 'landscape';
+  margins: { top: number; right: number; bottom: number; left: number };
+}
+
+interface LabelLayout {
+  labelsPerRow: number;
+  labelsPerColumn: number;
+  labelsPerPage: number;
+  horizontalSpacing: number;
+  verticalSpacing: number;
+}
 
 interface GeneratePDFOptions {
   template: Template & { elements: any[] };
@@ -13,6 +27,7 @@ interface GeneratePDFOptions {
 export async function generateLabelPDF({
   template,
   csvData,
+  csvHeaders,
   mapping,
   pdfOptions,
   labelLayout,
