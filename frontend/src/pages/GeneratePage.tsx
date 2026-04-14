@@ -75,9 +75,11 @@ export function GeneratePage() {
     }
   }, [id, mappingId, savedMappings]);
 
-  // Auto-calculate layout based on template size
+  // Auto-calculate layout based on template size (only on initial load)
+  const [isAutoCalculated, setIsAutoCalculated] = useState(false);
+  
   useEffect(() => {
-    if (!template) return;
+    if (!template || isAutoCalculated) return;
 
     const pageWidth = pdfOptions.orientation === 'portrait' ? 210 : 297;
     const pageHeight = pdfOptions.orientation === 'portrait' ? 297 : 210;
@@ -95,8 +97,9 @@ export function GeneratePage() {
         horizontalSpacing: (availableWidth - labelsPerRow * template.width) / (labelsPerRow - 1 || 1),
         verticalSpacing: (availableHeight - labelsPerColumn * template.height) / (labelsPerColumn - 1 || 1),
       });
+      setIsAutoCalculated(true);
     }
-  }, [template, pdfOptions]);
+  }, [template, pdfOptions, isAutoCalculated]);
 
   if (!id) return <Navigate to="/" />;
 
@@ -277,6 +280,14 @@ export function GeneratePage() {
                   <CardTitle>Disposition des étiquettes</CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-4">
+                    <button
+                      onClick={() => setIsAutoCalculated(false)}
+                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Calculer automatiquement selon la taille de l'étiquette
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <Input
                       label="Étiquettes par ligne"
