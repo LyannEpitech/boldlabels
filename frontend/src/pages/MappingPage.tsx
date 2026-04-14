@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../compone
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
-import { ArrowLeft, Upload, Save } from 'lucide-react';
+import { ArrowLeft, Upload, Save, AlertTriangle } from 'lucide-react';
 import Papa from 'papaparse';
 
 export function MappingPage() {
@@ -128,6 +128,21 @@ export function MappingPage() {
               <CardTitle>Associer les colonnes</CardTitle>
             </CardHeader>
             <CardContent>
+              {/* Alert for unmapped variables */}
+              {template.elements.some((el) => !mappings[el.variableName]) && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="text-yellow-500 mt-0.5" size={20} />
+                  <div>
+                    <div className="font-medium text-yellow-800">Variables non mappées</div>
+                    <div className="text-sm text-yellow-700">
+                      {template.elements
+                        .filter((el) => !mappings[el.variableName])
+                        .map((el) => el.variableName)
+                        .join(', ')} ne sont pas associées à une colonne CSV.
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-4">
                 {template.elements.map((element) => (
                   <div key={element.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded">
