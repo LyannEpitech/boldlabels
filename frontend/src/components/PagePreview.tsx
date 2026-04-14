@@ -1,6 +1,8 @@
 import type { Template, PDFOptions, LabelLayout } from '../types';
 import { LabelPreview } from './LabelPreview';
 
+const MM_TO_PX = 3.7795275591;
+
 interface PagePreviewProps {
   template: Template;
   csvData: string[][];
@@ -23,6 +25,10 @@ export function PagePreview({
   // Calculate page dimensions in mm
   const pageWidth = pdfOptions.orientation === 'portrait' ? 210 : 297;
   const pageHeight = pdfOptions.orientation === 'portrait' ? 297 : 210;
+  
+  // Calculate label size in pixels (same as LabelPreview with scale=0.5)
+  const labelWidthPx = template.width * MM_TO_PX * 0.5;
+  const labelHeightPx = template.height * MM_TO_PX * 0.5;
 
   // Get the data rows to display (up to labelsPerPage)
   const rowsToShow = csvData.slice(
@@ -54,24 +60,24 @@ export function PagePreview({
       <div
         className="bg-white shadow-lg mx-auto relative"
         style={{
-          width: `${pageWidth * 2}px`,
-          height: `${pageHeight * 2}px`,
-          padding: `${pdfOptions.margins.top * 2}px ${pdfOptions.margins.right * 2}px ${pdfOptions.margins.bottom * 2}px ${pdfOptions.margins.left * 2}px`,
+          width: `${pageWidth * MM_TO_PX * 0.5}px`,
+          height: `${pageHeight * MM_TO_PX * 0.5}px`,
+          padding: `${pdfOptions.margins.top * MM_TO_PX * 0.5}px ${pdfOptions.margins.right * MM_TO_PX * 0.5}px ${pdfOptions.margins.bottom * MM_TO_PX * 0.5}px ${pdfOptions.margins.left * MM_TO_PX * 0.5}px`,
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: `${labelLayout.verticalSpacing * 2}px` }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: `${labelLayout.verticalSpacing * MM_TO_PX * 0.5}px` }}>
           {rows.map((row, rowIndex) => (
             <div
               key={rowIndex}
-              style={{ display: 'flex', gap: `${labelLayout.horizontalSpacing * 2}px` }}
+              style={{ display: 'flex', gap: `${labelLayout.horizontalSpacing * MM_TO_PX * 0.5}px` }}
             >
               {row.map((data, colIndex) => (
                 <div
                   key={colIndex}
                   className="bg-white relative overflow-hidden flex-shrink-0"
                   style={{
-                    width: `${template.width * 2}px`,
-                    height: `${template.height * 2}px`,
+                    width: `${labelWidthPx}px`,
+                    height: `${labelHeightPx}px`,
                   }}
                 >
                   {data.length > 0 ? (
