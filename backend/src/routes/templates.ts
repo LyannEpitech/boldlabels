@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { TemplateSchema, TemplateElementSchema } from '../schemas.js';
+import { TemplateSchema, TemplateUpdateSchema, TemplateElementSchema } from '../schemas.js';
 
 const router = Router();
 
@@ -64,7 +64,28 @@ export function createTemplateRoutes(prisma: PrismaClient) {
     }
   });
 
-  // PUT /api/templates/:id - Update template
+  // PATCH /api/templates/:id - Partial update template (properties only)
+  router.patch('/:id', async (req, res) => {
+    try {
+      const validated = TemplateUpdateSchema.parse(req.body);
+      
+      // Simple update without touching elements
+      const template = await prisma.template.update({
+        where: { id: req.params.id },
+        data: validated,
+        include: { elements: true },
+      });
+      
+      res.json(template);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        return res.status(400).json({ error: 'Validation failed', details: error });
+      }
+      res.status(500).json({ error: 'Failed to update template' });
+    }
+  });
+
+  // PUT /api/templates/:id - Full update template (with elements)
   router.put('/:id', async (req, res) => {
     try {
       const validated = TemplateSchema.parse(req.body);

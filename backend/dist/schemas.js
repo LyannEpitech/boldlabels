@@ -10,6 +10,8 @@ export const TemplateSchema = z.object({
     borderColor: z.string().default('#000000'),
     borderRadius: z.number().default(0),
 });
+// Partial schema for updates
+export const TemplateUpdateSchema = TemplateSchema.partial();
 export const TemplateElementSchema = z.object({
     type: z.enum(['text', 'barcode', 'qrcode', 'image', 'rectangle']),
     variableName: z.string().min(1),

@@ -12,6 +12,9 @@ export const TemplateSchema = z.object({
   borderRadius: z.number().default(0),
 });
 
+// Partial schema for updates
+export const TemplateUpdateSchema = TemplateSchema.partial();
+
 export const TemplateElementSchema = z.object({
   type: z.enum(['text', 'barcode', 'qrcode', 'image', 'rectangle']),
   variableName: z.string().min(1),
