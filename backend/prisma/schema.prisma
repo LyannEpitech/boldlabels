@@ -20,6 +20,7 @@ model Template {
   borderRadius   Float     @default(0)
   elements       TemplateElement[]
   mappings       Mapping[]
+  layoutPresets  LayoutPreset[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -63,4 +64,26 @@ model ColumnMapping {
   columnName   String
   
   @@index([mappingId])
+}
+
+model LayoutPreset {
+  id                String   @id @default(uuid())
+  name              String
+  templateId        String
+  template          Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  pageSize          String   @default("A4")
+  orientation       String   @default("portrait")
+  marginTop         Float    @default(10)
+  marginRight       Float    @default(10)
+  marginBottom      Float    @default(10)
+  marginLeft        Float    @default(10)
+  labelsPerRow      Int      @default(3)
+  labelsPerColumn   Int      @default(8)
+  horizontalSpacing Float    @default(2)
+  verticalSpacing   Float    @default(0)
+  isDefault         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([templateId])
 }

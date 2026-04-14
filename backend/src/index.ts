@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { createTemplateRoutes } from './routes/templates.js';
 import { createMappingRoutes } from './routes/mappings.js';
 import { createGenerateRoutes } from './routes/generate.js';
+import { createLayoutPresetRoutes } from './routes/layoutPresets.js';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.get('/health', (req, res) => {
 // Routes
 app.use('/api/templates', createTemplateRoutes(prisma));
 app.use('/api/mappings', createMappingRoutes(prisma));
+app.use('/api/layout-presets', createLayoutPresetRoutes(prisma));
 app.use('/api/generate', createGenerateRoutes(prisma));
 
 // Error handler
