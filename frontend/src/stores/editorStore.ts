@@ -130,7 +130,21 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       const { template } = get();
       if (!template) return;
       
-      set({ isLoading: true, error: null });
+      // Update local state immediately for responsive UI
+      const localUpdated: Template = {
+        ...template,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: localUpdated,
+        templates: get().templates.map((t) =>
+          t.id === localUpdated.id ? localUpdated : t
+        ),
+      });
+      
+      // Save to backend in background
       try {
         const updated = await dbService.updateTemplate(template.id, updates);
         get().saveToHistory();
@@ -140,11 +154,11 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           templates: get().templates.map((t) =>
             t.id === updated.id ? updated : t
           ),
-          isLoading: false,
         });
       } catch (error) {
         console.error('Failed to update template:', error);
-        set({ error: 'Failed to update template', isLoading: false });
+        // Revert to original on error
+        set({ template, error: 'Failed to save changes' });
       }
     },
     
