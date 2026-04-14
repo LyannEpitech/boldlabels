@@ -149,6 +149,28 @@ export const dbService = {
     const res = await fetch(`/api/layout-presets/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete layout preset');
   },
+
+  // Session Data (replaces localStorage)
+  async getSessionData(templateId: string): Promise<any> {
+    const res = await fetch(`/api/session-data/${templateId}`);
+    if (!res.ok) throw new Error('Failed to fetch session data');
+    return res.json();
+  },
+
+  async saveSessionData(templateId: string, data: any): Promise<any> {
+    const res = await fetch(`/api/session-data/${templateId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to save session data');
+    return res.json();
+  },
+
+  async deleteSessionData(templateId: string): Promise<void> {
+    const res = await fetch(`/api/session-data/${templateId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete session data');
+  },
 };
 
 // PDF Service

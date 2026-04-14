@@ -8,7 +8,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
-import { pdfService } from '../services/dbService';
+import { pdfService, dbService } from '../services/dbService';
 import { PagePreview } from '../components/PagePreview';
 import { LayoutPresetManager } from '../components/LayoutPresetManager';
 import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
@@ -50,17 +50,58 @@ export function GeneratePage() {
     }
   }, [id, template, loadTemplate]);
 
-  // Load mapping from store and CSV from localStorage
+  // Load session data from API (replaces localStorage)
   useEffect(() => {
-    const savedCsv = localStorage.getItem(`csv_${id}`);
-
-    if (savedCsv) {
-      const parsed = JSON.parse(savedCsv);
-      setCsvHeaders(parsed.headers);
-      setCsvData(parsed.rows);
-    } else {
-      setShowUploadModal(true);
-    }
+    if (!id) return;
+    
+    const loadSessionData = async () => {
+      try {
+        const sessionData = await dbService.getSessionData(id);
+        
+        if (sessionData) {
+          // Load CSV data
+          if (sessionData.csvHeaders && sessionData.csvRows) {
+            setCsvHeaders(sessionData.csvHeaders);
+            setCsvData(sessionData.csvRows);
+          } else {
+            setShowUploadModal(true);
+          }
+          
+          // Load PDF options
+          if (sessionData.pageSize) {
+            setPdfOptions({
+              pageSize: sessionData.pageSize,
+              orientation: sessionData.orientation as 'portrait' | 'landscape',
+              margins: {
+                top: sessionData.marginTop,
+                right: sessionData.marginRight,
+                bottom: sessionData.marginBottom,
+                left: sessionData.marginLeft,
+              },
+            });
+          }
+          
+          // Load label layout
+          if (sessionData.labelsPerRow) {
+            setLabelLayout({
+              labelsPerRow: sessionData.labelsPerRow,
+              labelsPerColumn: sessionData.labelsPerColumn,
+              labelsPerPage: sessionData.labelsPerRow * sessionData.labelsPerColumn,
+              horizontalSpacing: sessionData.horizontalSpacing,
+              verticalSpacing: sessionData.verticalSpacing,
+            });
+            setIsAutoCalculated(true);
+          }
+        } else {
+          setShowUploadModal(true);
+        }
+      } catch (error) {
+        console.error('Failed to load session data:', error);
+        setShowUploadModal(true);
+      }
+    };
+    
+    loadSessionData();
 
     // Load mapping from Zustand store
     if (mappingId) {
@@ -76,28 +117,32 @@ export function GeneratePage() {
     }
   }, [id, mappingId, savedMappings]);
 
-  // Load saved settings from localStorage on mount
-  const [isAutoCalculated, setIsAutoCalculated] = useState(() => {
-    // Check if we have saved settings on initial render
-    const savedSettings = id ? localStorage.getItem(`generate_settings_${id}`) : null;
-    return !!savedSettings; // true if settings exist, false otherwise
-  });
+  // Auto-calculation flag
+  const [isAutoCalculated, setIsAutoCalculated] = useState(false);
 
+  // Save session data to API when settings change (debounced)
   useEffect(() => {
     if (!id) return;
-    const savedSettings = localStorage.getItem(`generate_settings_${id}`);
-    if (savedSettings) {
-      const { pdfOptions: savedPdfOptions, labelLayout: savedLabelLayout } = JSON.parse(savedSettings);
-      setPdfOptions(savedPdfOptions);
-      setLabelLayout(savedLabelLayout);
-    }
-  }, [id]);
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    if (!id) return;
-    const settings = { pdfOptions, labelLayout };
-    localStorage.setItem(`generate_settings_${id}`, JSON.stringify(settings));
+    
+    const timeout = setTimeout(() => {
+      dbService.saveSessionData(id, {
+        csvHeaders,
+        csvRows: csvData,
+        pageSize: pdfOptions.pageSize,
+        orientation: pdfOptions.orientation,
+        marginTop: pdfOptions.margins.top,
+        marginRight: pdfOptions.margins.right,
+        marginBottom: pdfOptions.margins.bottom,
+        marginLeft: pdfOptions.margins.left,
+        labelsPerRow: labelLayout.labelsPerRow,
+        labelsPerColumn: labelLayout.labelsPerColumn,
+        horizontalSpacing: labelLayout.horizontalSpacing,
+        verticalSpacing: labelLayout.verticalSpacing,
+        selectedMappingId: mappingId,
+      }).catch(console.error);
+    }, 500); // Debounce 500ms
+    
+    return () => clearTimeout(timeout);
   }, [pdfOptions, labelLayout, id]);
 
   // Auto-calculate layout based on template size (only on initial load if no saved settings)
@@ -144,10 +189,9 @@ export function GeneratePage() {
 
           setCsvHeaders(headers);
           setCsvData(rows);
-
-          // Save to localStorage
-          localStorage.setItem(`csv_${id}`, JSON.stringify({ headers, rows }));
           setShowUploadModal(false);
+          
+          // Session data will be saved by the useEffect
         }
       },
     });

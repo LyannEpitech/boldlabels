@@ -21,6 +21,7 @@ model Template {
   elements       TemplateElement[]
   mappings       Mapping[]
   layoutPresets  LayoutPreset[]
+  sessionData    SessionData[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
@@ -85,5 +86,38 @@ model LayoutPreset {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   
+  @@index([templateId])
+}
+
+// Stores CSV data and generate settings per template (replaces localStorage)
+model SessionData {
+  id                String   @id @default(uuid())
+  templateId        String
+  template          Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  
+  // CSV data
+  csvHeaders        String?  // JSON array of headers
+  csvRows           String?  // JSON array of rows
+  
+  // PDF Options
+  pageSize          String   @default("A4")
+  orientation       String   @default("portrait")
+  marginTop         Float    @default(10)
+  marginRight       Float    @default(10)
+  marginBottom      Float    @default(10)
+  marginLeft        Float    @default(10)
+  
+  // Label Layout
+  labelsPerRow      Int      @default(3)
+  labelsPerColumn   Int      @default(8)
+  horizontalSpacing Float    @default(2)
+  verticalSpacing   Float    @default(0)
+  
+  // Selected mapping
+  selectedMappingId String?
+  
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([templateId])
   @@index([templateId])
 }

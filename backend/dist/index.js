@@ -6,6 +6,7 @@ import { createTemplateRoutes } from './routes/templates.js';
 import { createMappingRoutes } from './routes/mappings.js';
 import { createGenerateRoutes } from './routes/generate.js';
 import { createLayoutPresetRoutes } from './routes/layoutPresets.js';
+import { createSessionDataRoutes } from './routes/sessionData.js';
 dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
@@ -19,6 +20,7 @@ app.get('/health', (req, res) => {
 app.use('/api/templates', createTemplateRoutes(prisma));
 app.use('/api/mappings', createMappingRoutes(prisma));
 app.use('/api/layout-presets', createLayoutPresetRoutes(prisma));
+app.use('/api/session-data', createSessionDataRoutes(prisma));
 app.use('/api/generate', createGenerateRoutes(prisma));
 // Error handler
 app.use((err, req, res, next) => {
