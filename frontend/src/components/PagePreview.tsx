@@ -56,17 +56,20 @@ export function PagePreview({
           padding: `${pdfOptions.margins.top * 2}px ${pdfOptions.margins.right * 2}px ${pdfOptions.margins.bottom * 2}px ${pdfOptions.margins.left * 2}px`,
         }}
       >
-        <div className="flex flex-col" style={{ gap: `${labelLayout.verticalSpacing * 2}px` }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: `${labelLayout.verticalSpacing * 2}px` }}>
           {rows.map((row, rowIndex) => (
             <div
               key={rowIndex}
-              className="flex"
-              style={{ gap: `${labelLayout.horizontalSpacing * 2}px` }}
+              style={{ display: 'flex', gap: `${labelLayout.horizontalSpacing * 2}px` }}
             >
               {row.map((data, colIndex) => (
                 <div
                   key={colIndex}
-                  className="border border-dashed border-gray-300 bg-white relative overflow-hidden flex-shrink-0"
+                  className={`bg-white relative overflow-hidden flex-shrink-0 ${
+                    labelLayout.horizontalSpacing === 0 && labelLayout.verticalSpacing === 0
+                      ? ''
+                      : 'border border-dashed border-gray-300'
+                  }`}
                   style={{
                     width: `${template.width * 2}px`,
                     height: `${template.height * 2}px`,
