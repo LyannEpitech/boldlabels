@@ -75,14 +75,20 @@ export function GeneratePage() {
     }
   }, [id, mappingId, savedMappings]);
 
-  // Load saved settings from localStorage
+  // Load saved settings from localStorage on mount
+  const [isAutoCalculated, setIsAutoCalculated] = useState(() => {
+    // Check if we have saved settings on initial render
+    const savedSettings = id ? localStorage.getItem(`generate_settings_${id}`) : null;
+    return !!savedSettings; // true if settings exist, false otherwise
+  });
+
   useEffect(() => {
+    if (!id) return;
     const savedSettings = localStorage.getItem(`generate_settings_${id}`);
     if (savedSettings) {
       const { pdfOptions: savedPdfOptions, labelLayout: savedLabelLayout } = JSON.parse(savedSettings);
       setPdfOptions(savedPdfOptions);
       setLabelLayout(savedLabelLayout);
-      setIsAutoCalculated(true); // Don't auto-calculate if we have saved settings
     }
   }, [id]);
 
@@ -93,8 +99,7 @@ export function GeneratePage() {
     localStorage.setItem(`generate_settings_${id}`, JSON.stringify(settings));
   }, [pdfOptions, labelLayout, id]);
 
-  // Auto-calculate layout based on template size (only on initial load)
-  const [isAutoCalculated, setIsAutoCalculated] = useState(false);
+  // Auto-calculate layout based on template size (only on initial load if no saved settings)
   
   useEffect(() => {
     if (!template || isAutoCalculated) return;
