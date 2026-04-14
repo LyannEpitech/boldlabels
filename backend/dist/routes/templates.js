@@ -36,8 +36,14 @@ export function createTemplateRoutes(prisma) {
         try {
             const validated = TemplateSchema.parse(req.body);
             const elements = req.body.elements || [];
-            // Validate elements
-            const validatedElements = elements.map((el) => TemplateElementSchema.parse(el));
+            // Validate elements and convert properties to string
+            const validatedElements = elements.map((el) => {
+                const validated = TemplateElementSchema.parse(el);
+                return {
+                    ...validated,
+                    properties: JSON.stringify(validated.properties),
+                };
+            });
             const template = await prisma.template.create({
                 data: {
                     ...validated,
@@ -80,8 +86,14 @@ export function createTemplateRoutes(prisma) {
         try {
             const validated = TemplateSchema.parse(req.body);
             const elements = req.body.elements || [];
-            // Validate elements
-            const validatedElements = elements.map((el) => TemplateElementSchema.parse(el));
+            // Validate elements and convert properties to string
+            const validatedElements = elements.map((el) => {
+                const validated = TemplateElementSchema.parse(el);
+                return {
+                    ...validated,
+                    properties: JSON.stringify(validated.properties),
+                };
+            });
             // Use transaction to update template and elements
             const template = await prisma.$transaction(async (tx) => {
                 // Delete existing elements

@@ -105,14 +105,19 @@ export async function generateLabelPDF({
 
       if (element.type === 'text') {
         doc.setFont(props.fontFamily || 'helvetica');
-        doc.setFontSize(props.fontSize || 12);
+        // Convert fontSize from pt to mm (jsPDF uses mm with our config)
+        const fontSizeMm = (props.fontSize || 12) / 2.83465;
+        doc.setFontSize(fontSizeMm);
         doc.setTextColor(props.color || '#000000');
         
         const align = props.align || 'left';
         const textX = align === 'center' ? elX + (element.width || 50) / 2 : 
                      align === 'right' ? elX + (element.width || 50) : elX;
         
-        doc.text(String(value), textX, elY + (props.fontSize || 12) * 0.35, {
+        // Offset Y to align with preview (jsPDF positions from baseline)
+        const baselineOffset = fontSizeMm * 0.35;
+        
+        doc.text(String(value), textX, elY + baselineOffset, {
           align: align as any,
           maxWidth: element.width || 50,
         });
