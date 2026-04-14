@@ -9,7 +9,7 @@ import { Modal } from '../components/ui/Modal';
 import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
 import { pdfService } from '../services/dbService';
-import { LabelPreview } from '../components/LabelPreview';
+import { PagePreview } from '../components/PagePreview';
 import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
@@ -330,19 +330,18 @@ export function GeneratePage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Aperçu</CardTitle>
+                  <CardTitle>Aperçu de la page</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {template && csvData.length > 0 ? (
-                    <div className="bg-white rounded border overflow-hidden flex items-center justify-center p-4">
-                      <LabelPreview
-                        template={template}
-                        rowData={csvData[0]}
-                        csvHeaders={csvHeaders}
-                        mapping={mapping}
-                        scale={0.8}
-                      />
-                    </div>
+                    <PagePreview
+                      template={template}
+                      csvData={csvData}
+                      csvHeaders={csvHeaders}
+                      mapping={mapping}
+                      pdfOptions={pdfOptions}
+                      labelLayout={labelLayout}
+                    />
                   ) : (
                     <div
                       className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
