@@ -69,15 +69,13 @@ export function PagePreview({
               }}
             >
               {row.length > 0 ? (
-                <div className="transform scale-50 origin-top-left" style={{ width: '200%' }}>
-                  <LabelPreview
-                    template={template}
-                    rowData={row}
-                    csvHeaders={csvHeaders}
-                    mapping={mapping}
-                    scale={0.5}
-                  />
-                </div>
+                <LabelPreview
+                  template={template}
+                  rowData={row}
+                  csvHeaders={csvHeaders}
+                  mapping={mapping}
+                  scale={0.5}
+                />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-xs">
                   Vide
