@@ -128,8 +128,18 @@ export function MappingPage() {
               <CardTitle>Associer les colonnes</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Alert for unmapped variables */}
-              {template.elements.some((el) => !mappings[el.variableName]) && (
+              {/* Alert for unmapped variables or no variables */}
+              {template.elements.length === 0 ? (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="text-yellow-500 mt-0.5" size={20} />
+                  <div>
+                    <div className="font-medium text-yellow-800">Aucune variable</div>
+                    <div className="text-sm text-yellow-700">
+                      Ce template ne contient aucune variable. Ajoutez des éléments avec des noms de variables dans l'éditeur.
+                    </div>
+                  </div>
+                </div>
+              ) : template.elements.some((el) => !mappings[el.variableName]) && (
                 <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
                   <AlertTriangle className="text-yellow-500 mt-0.5" size={20} />
                   <div>
