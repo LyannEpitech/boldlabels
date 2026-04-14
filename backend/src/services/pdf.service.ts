@@ -24,6 +24,9 @@ interface GeneratePDFOptions {
   labelLayout: LabelLayout;
 }
 
+// Convert mm to points (jsPDF uses points by default with unit: 'mm')
+const MM_TO_PT = 2.83465;
+
 export async function generateLabelPDF({
   template,
   csvData,
@@ -44,8 +47,9 @@ export async function generateLabelPDF({
   const availableWidth = pageWidth - pdfOptions.margins.left - pdfOptions.margins.right;
   const availableHeight = pageHeight - pdfOptions.margins.top - pdfOptions.margins.bottom;
 
-  const labelWidth = (availableWidth - (labelLayout.labelsPerRow - 1) * labelLayout.horizontalSpacing) / labelLayout.labelsPerRow;
-  const labelHeight = (availableHeight - (labelLayout.labelsPerColumn - 1) * labelLayout.verticalSpacing) / labelLayout.labelsPerColumn;
+  // Use template dimensions for label size, not calculated
+  const labelWidth = template.width;
+  const labelHeight = template.height;
 
   let currentRow = 0;
   let currentCol = 0;
@@ -53,6 +57,7 @@ export async function generateLabelPDF({
   for (let i = 0; i < csvData.length; i++) {
     const row = csvData[i];
 
+    // Check if we need a new page
     if (currentRow >= labelLayout.labelsPerColumn) {
       doc.addPage();
       currentRow = 0;
@@ -84,22 +89,72 @@ export async function generateLabelPDF({
         }
       }
 
+      // Element position relative to label
       const elX = x + element.x;
       const elY = y + element.y;
 
+      // Parse properties (handle both string and object)
+      let props: any = {};
+      try {
+        props = typeof element.properties === 'string' 
+          ? JSON.parse(element.properties) 
+          : element.properties || {};
+      } catch (e) {
+        props = {};
+      }
+
       if (element.type === 'text') {
-        const props = JSON.parse(element.properties);
         doc.setFont(props.fontFamily || 'helvetica');
         doc.setFontSize(props.fontSize || 12);
         doc.setTextColor(props.color || '#000000');
         
         const align = props.align || 'left';
-        const textX = align === 'center' ? elX + element.width / 2 : align === 'right' ? elX + element.width : elX;
+        const textX = align === 'center' ? elX + (element.width || 50) / 2 : 
+                     align === 'right' ? elX + (element.width || 50) : elX;
         
-        doc.text(value, textX, elY + (props.fontSize || 12) * 0.35, {
+        doc.text(String(value), textX, elY + (props.fontSize || 12) * 0.35, {
           align: align as any,
-          maxWidth: element.width,
+          maxWidth: element.width || 50,
         });
+      } else if (element.type === 'barcode') {
+        // Draw barcode placeholder with value
+        doc.setDrawColor(props.lineColor || '#000000');
+        doc.setFillColor(props.backgroundColor || '#FFFFFF');
+        doc.rect(elX, elY, element.width || 40, element.height || 20, 'FD');
+        
+        doc.setFont('helvetica');
+        doc.setFontSize(8);
+        doc.setTextColor(props.lineColor || '#000000');
+        doc.text(String(value).substring(0, 20), elX + 2, elY + (element.height || 20) / 2);
+        
+        // Note: Real barcode generation would require a barcode library
+        // For now, we display the value as text
+      } else if (element.type === 'qrcode') {
+        // Draw QR placeholder
+        doc.setDrawColor(props.color || '#000000');
+        doc.setFillColor(props.backgroundColor || '#FFFFFF');
+        doc.rect(elX, elY, element.width || 30, element.height || 30, 'FD');
+        
+        doc.setFontSize(6);
+        doc.setTextColor(props.color || '#000000');
+        doc.text('QR', elX + (element.width || 30) / 2 - 3, elY + (element.height || 30) / 2);
+      } else if (element.type === 'rectangle') {
+        doc.setDrawColor(props.strokeColor || '#000000');
+        doc.setFillColor(props.fillColor || 'transparent');
+        doc.setLineWidth(props.strokeWidth || 1);
+        
+        if (props.fillColor && props.fillColor !== 'transparent') {
+          doc.rect(elX, elY, element.width || 20, element.height || 10, 'FD');
+        } else {
+          doc.rect(elX, elY, element.width || 20, element.height || 10, 'S');
+        }
+      } else if (element.type === 'image') {
+        // Image placeholder
+        doc.setDrawColor('#CCCCCC');
+        doc.rect(elX, elY, element.width || 30, element.height || 30, 'S');
+        doc.setFontSize(8);
+        doc.setTextColor('#999999');
+        doc.text('IMG', elX + (element.width || 30) / 2 - 5, elY + (element.height || 30) / 2);
       }
     }
 
