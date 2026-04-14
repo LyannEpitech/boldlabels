@@ -75,6 +75,24 @@ export function GeneratePage() {
     }
   }, [id, mappingId, savedMappings]);
 
+  // Load saved settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem(`generate_settings_${id}`);
+    if (savedSettings) {
+      const { pdfOptions: savedPdfOptions, labelLayout: savedLabelLayout } = JSON.parse(savedSettings);
+      setPdfOptions(savedPdfOptions);
+      setLabelLayout(savedLabelLayout);
+      setIsAutoCalculated(true); // Don't auto-calculate if we have saved settings
+    }
+  }, [id]);
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    if (!id) return;
+    const settings = { pdfOptions, labelLayout };
+    localStorage.setItem(`generate_settings_${id}`, JSON.stringify(settings));
+  }, [pdfOptions, labelLayout, id]);
+
   // Auto-calculate layout based on template size (only on initial load)
   const [isAutoCalculated, setIsAutoCalculated] = useState(false);
   
