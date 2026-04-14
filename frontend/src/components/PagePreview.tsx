@@ -68,11 +68,7 @@ export function PagePreview({
               {row.map((data, colIndex) => (
                 <div
                   key={colIndex}
-                  className={`bg-white relative overflow-hidden flex-shrink-0 ${
-                    labelLayout.horizontalSpacing === 0 && labelLayout.verticalSpacing === 0
-                      ? ''
-                      : 'border border-dashed border-gray-300'
-                  }`}
+                  className="bg-white relative overflow-hidden flex-shrink-0"
                   style={{
                     width: `${template.width * 2}px`,
                     height: `${template.height * 2}px`,
