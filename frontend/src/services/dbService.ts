@@ -49,8 +49,10 @@ export const dbService = {
     if (isElectron() && electronAPI) {
       return electronAPI.updateTemplate(id, updates);
     } else {
+      // Use PUT if elements are included, PATCH for property-only updates
+      const hasElements = 'elements' in updates && updates.elements !== undefined;
       const res = await fetch(`/api/templates/${id}`, {
-        method: 'PATCH',
+        method: hasElements ? 'PUT' : 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
