@@ -30,15 +30,18 @@ export function PagePreview({
     currentRowIndex + labelLayout.labelsPerPage
   );
 
+  // Calculate actual number of labels to show based on current layout settings
+  const actualLabelsPerPage = labelLayout.labelsPerRow * labelLayout.labelsPerColumn;
+  
   // Fill with empty rows if needed to show full layout
   const displayRows = [...rowsToShow];
-  while (displayRows.length < labelLayout.labelsPerPage) {
+  while (displayRows.length < actualLabelsPerPage) {
     displayRows.push([]);
   }
 
   // Group rows by line
   const rows: string[][][] = [];
-  for (let i = 0; i < displayRows.length; i += labelLayout.labelsPerRow) {
+  for (let i = 0; i < actualLabelsPerPage; i += labelLayout.labelsPerRow) {
     rows.push(displayRows.slice(i, i + labelLayout.labelsPerRow));
   }
 

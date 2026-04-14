@@ -293,13 +293,27 @@ export function GeneratePage() {
                       label="Étiquettes par ligne"
                       type="number"
                       value={labelLayout.labelsPerRow}
-                      onChange={(e) => setLabelLayout({ ...labelLayout, labelsPerRow: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const labelsPerRow = parseInt(e.target.value) || 1;
+                        setLabelLayout({ 
+                          ...labelLayout, 
+                          labelsPerRow,
+                          labelsPerPage: labelsPerRow * labelLayout.labelsPerColumn
+                        });
+                      }}
                     />
                     <Input
                       label="Étiquettes par colonne"
                       type="number"
                       value={labelLayout.labelsPerColumn}
-                      onChange={(e) => setLabelLayout({ ...labelLayout, labelsPerColumn: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const labelsPerColumn = parseInt(e.target.value) || 1;
+                        setLabelLayout({ 
+                          ...labelLayout, 
+                          labelsPerColumn,
+                          labelsPerPage: labelLayout.labelsPerRow * labelsPerColumn
+                        });
+                      }}
                     />
                     <Input
                       label="Espacement horizontal (mm)"
