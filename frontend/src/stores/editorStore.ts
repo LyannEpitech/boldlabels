@@ -149,10 +149,18 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         const updated = await dbService.updateTemplate(template.id, updates);
         get().saveToHistory();
         
+        // Merge backend response with local state to preserve elements if backend doesn't return them
+        const mergedTemplate: Template = {
+          ...localUpdated,
+          ...updated,
+          // Always keep elements from local state unless explicitly updating them
+          elements: updates.elements !== undefined ? updated.elements : localUpdated.elements,
+        };
+        
         set({
-          template: updated,
+          template: mergedTemplate,
           templates: get().templates.map((t) =>
-            t.id === updated.id ? updated : t
+            t.id === mergedTemplate.id ? mergedTemplate : t
           ),
         });
       } catch (error) {
@@ -227,7 +235,11 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       });
       
       // Auto-save to backend
-      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .then((result) => {
+          console.log('Elements saved:', result.elements?.length || 0, 'elements');
+        })
+        .catch(console.error);
     },
     
     updateElement: (id, updates) => {
