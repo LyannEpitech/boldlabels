@@ -159,8 +159,12 @@ export function Sidebar() {
                   <input
                     type="number"
                     step="0.1"
+                    min="1"
                     value={template.width}
-                    onChange={(e) => updateTemplate({ width: parseFloat(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      updateTemplate({ width: isNaN(value) ? 1 : Math.max(1, value) });
+                    }}
                     className="w-full px-2 py-1 text-sm border rounded"
                   />
                 </div>
@@ -169,8 +173,12 @@ export function Sidebar() {
                   <input
                     type="number"
                     step="0.1"
+                    min="1"
                     value={template.height}
-                    onChange={(e) => updateTemplate({ height: parseFloat(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      updateTemplate({ height: isNaN(value) ? 1 : Math.max(1, value) });
+                    }}
                     className="w-full px-2 py-1 text-sm border rounded"
                   />
                 </div>
@@ -181,8 +189,10 @@ export function Sidebar() {
                 <input
                   type="color"
                   value={template.backgroundColor}
-                  onChange={(e) => updateTemplate({ backgroundColor: e.target.value })}
-                  className="w-full h-8"
+                  onChange={(e) => {
+                    updateTemplate({ backgroundColor: e.target.value });
+                  }}
+                  className="w-full h-8 cursor-pointer"
                 />
               </div>
               
@@ -191,8 +201,12 @@ export function Sidebar() {
                 <input
                   type="number"
                   step="0.1"
+                  min="0"
                   value={template.borderWidth}
-                  onChange={(e) => updateTemplate({ borderWidth: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    updateTemplate({ borderWidth: isNaN(value) ? 0 : value });
+                  }}
                   className="w-full px-2 py-1 text-sm border rounded"
                 />
               </div>
@@ -202,8 +216,10 @@ export function Sidebar() {
                 <input
                   type="color"
                   value={template.borderColor}
-                  onChange={(e) => updateTemplate({ borderColor: e.target.value })}
-                  className="w-full h-8"
+                  onChange={(e) => {
+                    updateTemplate({ borderColor: e.target.value });
+                  }}
+                  className="w-full h-8 cursor-pointer"
                 />
               </div>
             </div>
