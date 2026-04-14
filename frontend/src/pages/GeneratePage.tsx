@@ -10,6 +10,7 @@ import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
 import { pdfService } from '../services/dbService';
 import { PagePreview } from '../components/PagePreview';
+import { LayoutPresetManager } from '../components/LayoutPresetManager';
 import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
@@ -295,6 +296,26 @@ export function GeneratePage() {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Presets</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {id && (
+                    <LayoutPresetManager
+                      templateId={id}
+                      pdfOptions={pdfOptions}
+                      labelLayout={labelLayout}
+                      onLoadPreset={(newPdfOptions, newLabelLayout) => {
+                        setPdfOptions(newPdfOptions);
+                        setLabelLayout(newLabelLayout);
+                        setIsAutoCalculated(true);
+                      }}
+                    />
+                  )}
                 </CardContent>
               </Card>
 

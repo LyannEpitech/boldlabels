@@ -127,6 +127,28 @@ export const dbService = {
       if (!res.ok) throw new Error('Failed to delete mapping');
     }
   },
+
+  // Layout Presets
+  async getLayoutPresets(templateId: string): Promise<any[]> {
+    const res = await fetch(`/api/layout-presets?templateId=${templateId}`);
+    if (!res.ok) throw new Error('Failed to fetch layout presets');
+    return res.json();
+  },
+
+  async createLayoutPreset(preset: any): Promise<any> {
+    const res = await fetch('/api/layout-presets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(preset),
+    });
+    if (!res.ok) throw new Error('Failed to create layout preset');
+    return res.json();
+  },
+
+  async deleteLayoutPreset(id: string): Promise<void> {
+    const res = await fetch(`/api/layout-presets/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete layout preset');
+  },
 };
 
 // PDF Service
