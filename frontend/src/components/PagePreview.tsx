@@ -36,6 +36,12 @@ export function PagePreview({
     displayRows.push([]);
   }
 
+  // Group rows by line
+  const rows: string[][][] = [];
+  for (let i = 0; i < displayRows.length; i += labelLayout.labelsPerRow) {
+    rows.push(displayRows.slice(i, i + labelLayout.labelsPerRow));
+  }
+
   return (
     <div className="bg-gray-100 p-4 rounded-lg overflow-auto">
       <div className="text-sm text-gray-600 mb-2">
@@ -50,37 +56,37 @@ export function PagePreview({
           padding: `${pdfOptions.margins.top * 2}px ${pdfOptions.margins.right * 2}px ${pdfOptions.margins.bottom * 2}px ${pdfOptions.margins.left * 2}px`,
         }}
       >
-        <div
-          className="grid gap-0"
-          style={{
-            gridTemplateColumns: `repeat(${labelLayout.labelsPerRow}, ${template.width * 2}px)`,
-            gridTemplateRows: `repeat(${labelLayout.labelsPerColumn}, ${template.height * 2}px)`,
-            columnGap: `${labelLayout.horizontalSpacing * 2}px`,
-            rowGap: `${labelLayout.verticalSpacing * 2}px`,
-          }}
-        >
-          {displayRows.map((row, index) => (
+        <div className="flex flex-col" style={{ gap: `${labelLayout.verticalSpacing * 2}px` }}>
+          {rows.map((row, rowIndex) => (
             <div
-              key={index}
-              className="border border-dashed border-gray-300 bg-white relative overflow-hidden"
-              style={{
-                width: `${template.width * 2}px`,
-                height: `${template.height * 2}px`,
-              }}
+              key={rowIndex}
+              className="flex"
+              style={{ gap: `${labelLayout.horizontalSpacing * 2}px` }}
             >
-              {row.length > 0 ? (
-                <LabelPreview
-                  template={template}
-                  rowData={row}
-                  csvHeaders={csvHeaders}
-                  mapping={mapping}
-                  scale={0.5}
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-xs">
-                  Vide
+              {row.map((data, colIndex) => (
+                <div
+                  key={colIndex}
+                  className="border border-dashed border-gray-300 bg-white relative overflow-hidden flex-shrink-0"
+                  style={{
+                    width: `${template.width * 2}px`,
+                    height: `${template.height * 2}px`,
+                  }}
+                >
+                  {data.length > 0 ? (
+                    <LabelPreview
+                      template={template}
+                      rowData={data}
+                      csvHeaders={csvHeaders}
+                      mapping={mapping}
+                      scale={0.5}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-xs">
+                      Vide
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
           ))}
         </div>
