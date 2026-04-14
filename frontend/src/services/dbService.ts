@@ -17,7 +17,15 @@ export const dbService = {
     } else {
       const res = await fetch('/api/templates');
       if (!res.ok) throw new Error('Failed to fetch templates');
-      return res.json();
+      const templates = await res.json();
+      // Parse properties from string to object for all templates
+      return templates.map((template: any) => ({
+        ...template,
+        elements: template.elements?.map((el: any) => ({
+          ...el,
+          properties: typeof el.properties === 'string' ? JSON.parse(el.properties) : el.properties,
+        })) || [],
+      }));
     }
   },
 
@@ -27,7 +35,15 @@ export const dbService = {
     } else {
       const res = await fetch(`/api/templates/${id}`);
       if (!res.ok) throw new Error('Failed to fetch template');
-      return res.json();
+      const template = await res.json();
+      // Parse properties from string to object
+      if (template && template.elements) {
+        template.elements = template.elements.map((el: any) => ({
+          ...el,
+          properties: typeof el.properties === 'string' ? JSON.parse(el.properties) : el.properties,
+        }));
+      }
+      return template;
     }
   },
 
@@ -57,7 +73,15 @@ export const dbService = {
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error('Failed to update template');
-      return res.json();
+      const template = await res.json();
+      // Parse properties from string to object
+      if (template && template.elements) {
+        template.elements = template.elements.map((el: any) => ({
+          ...el,
+          properties: typeof el.properties === 'string' ? JSON.parse(el.properties) : el.properties,
+        }));
+      }
+      return template;
     }
   },
 
