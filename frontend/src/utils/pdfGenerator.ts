@@ -188,29 +188,26 @@ function drawTextElement(
   const availableWidth = element.width - margin * 2;
   const availableHeight = element.height - margin * 2;
   
-  // Auto-adjust font size if text is too long - FORCE RECOMPILE v3
-  let fontSize = props.fontSize || 12;
+  // Use user-defined font size - truncate with ellipsis if too long
+  const fontSize = props.fontSize || 12;
+  doc.setFontSize(fontSize);
   
-  // Binary search for best font size
-  let minSize = 6;
-  let maxSize = fontSize;
-  let bestSize = minSize;
+  // Truncate text with ellipsis if it exceeds available width
+  let displayValue = value;
+  let textWidth = doc.getTextWidth(displayValue);
+  const ellipsis = '...';
+  const ellipsisWidth = doc.getTextWidth(ellipsis);
   
-  for (let i = 0; i < 10; i++) {
-    const testSize = (minSize + maxSize) / 2;
-    doc.setFontSize(testSize);
-    const testWidth = doc.getTextWidth(value);
-    if (testWidth <= availableWidth) {
-      bestSize = testSize;
-      minSize = testSize;
-    } else {
-      maxSize = testSize;
-    }
+  while (textWidth > availableWidth && displayValue.length > 0) {
+    displayValue = displayValue.slice(0, -1);
+    textWidth = doc.getTextWidth(displayValue + ellipsis);
   }
   
-  fontSize = bestSize;
-  doc.setFontSize(fontSize);
-  console.log('[PDF] Final font size:', fontSize, 'text width:', doc.getTextWidth(value), 'available:', availableWidth);
+  if (displayValue.length < value.length) {
+    displayValue = displayValue + ellipsis;
+  }
+  
+  console.log('[PDF] Text:', value.substring(0, 20), '→', displayValue.substring(0, 20), 'width:', textWidth, 'available:', availableWidth);
   
   const textX = align === 'center'
     ? x + element.width / 2
@@ -242,7 +239,7 @@ function drawTextElement(
     textY = y + margin + lineHeight * 0.7;
   }
   
-  doc.text(finalText, textX, textY, {
+  doc.text(displayValue, textX, textY, {
     align: align as any,
   });
 }
