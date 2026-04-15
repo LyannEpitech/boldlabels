@@ -189,13 +189,15 @@ function drawTextElement(
     : x;
 
   // Handle vertical align - jsPDF positions text by baseline
-  // Adjust for better alignment with preview
+  // Need to add fontSize offset because y is the baseline position
   const fontSize = props.fontSize || 12;
+  const baselineOffset = fontSize * 0.8; // Approximate ascent from baseline to top
+  
   const textY = props.verticalAlign === 'middle'
-    ? y + element.height / 2 + fontSize * 0.15  // Middle: small adjustment
+    ? y + element.height / 2 + baselineOffset / 2
     : props.verticalAlign === 'bottom'
-    ? y + element.height - fontSize * 0.1  // Bottom: small padding
-    : y + fontSize * 0.25;  // Top: start a bit below top edge
+    ? y + element.height - baselineOffset * 0.2
+    : y + baselineOffset; // Top: add full offset to prevent clipping
 
   doc.text(value, textX, textY, {
     align: align as any,
