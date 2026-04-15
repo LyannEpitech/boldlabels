@@ -53,9 +53,9 @@ export async function generateLabelPDF({
   pdfOptions,
   labelLayout,
 }: GeneratePDFOptions): Promise<Buffer> {
-  // Use points as unit to have better control over scaling
+  // Use mm as unit (jsPDF will convert to points internally)
   const doc = new jsPDF({
-    unit: 'pt',
+    unit: 'mm',
     format: pdfOptions.pageSize.toLowerCase(),
     orientation: pdfOptions.orientation,
   });
@@ -63,18 +63,18 @@ export async function generateLabelPDF({
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Convert margins from mm to pt
-  const marginTop = pdfOptions.margins.top * MM_TO_PT;
-  const marginRight = pdfOptions.margins.right * MM_TO_PT;
-  const marginBottom = pdfOptions.margins.bottom * MM_TO_PT;
-  const marginLeft = pdfOptions.margins.left * MM_TO_PT;
+  // Margins are already in mm
+  const marginTop = pdfOptions.margins.top;
+  const marginRight = pdfOptions.margins.right;
+  const marginBottom = pdfOptions.margins.bottom;
+  const marginLeft = pdfOptions.margins.left;
 
   const availableWidth = pageWidth - marginLeft - marginRight;
   const availableHeight = pageHeight - marginTop - marginBottom;
 
-  // Convert template dimensions from mm to pt
-  const labelWidth = template.width * MM_TO_PT;
-  const labelHeight = template.height * MM_TO_PT;
+  // Template dimensions are already in mm
+  const labelWidth = template.width;
+  const labelHeight = template.height;
 
   let currentRow = 0;
   let currentCol = 0;
@@ -93,9 +93,9 @@ export async function generateLabelPDF({
     const labelsPerRow = Math.max(1, labelLayout.labelsPerRow || 1);
     const labelsPerColumn = Math.max(1, labelLayout.labelsPerColumn || 1);
     
-    // Convert spacing from mm to pt
-    const horizontalSpacing = labelLayout.horizontalSpacing * MM_TO_PT;
-    const verticalSpacing = labelLayout.verticalSpacing * MM_TO_PT;
+    // Spacing is already in mm
+    const horizontalSpacing = labelLayout.horizontalSpacing;
+    const verticalSpacing = labelLayout.verticalSpacing;
     
     const x = marginLeft + currentCol * (labelWidth + horizontalSpacing);
     const y = marginTop + currentRow * (labelHeight + verticalSpacing);
@@ -122,11 +122,11 @@ export async function generateLabelPDF({
         }
       }
 
-      // Element position relative to label (convert mm to pt)
-      const elX = x + element.x * MM_TO_PT;
-      const elY = y + element.y * MM_TO_PT;
-      const elWidth = element.width * MM_TO_PT;
-      const elHeight = element.height * MM_TO_PT;
+      // Element position relative to label (already in mm)
+      const elX = x + element.x;
+      const elY = y + element.y;
+      const elWidth = element.width;
+      const elHeight = element.height;
 
       // Parse properties (handle both string and object)
       let props: any = {};
@@ -141,9 +141,9 @@ export async function generateLabelPDF({
       if (element.type === 'text') {
         doc.setFont(props.fontFamily || 'helvetica');
         
-        // Convert fontSize from pt to px for consistency with preview
-        // Preview uses: fontSizePx = fontSize * 1.333
-        const fontSizePt = (props.fontSize || 12) * PT_TO_PX;
+        // jsPDF setFontSize always expects points, regardless of unit setting
+        // The fontSize in props is in pt, so use it directly
+        const fontSizePt = props.fontSize || 12;
         doc.setFontSize(fontSizePt);
         doc.setTextColor(props.color || '#000000');
         
@@ -154,16 +154,18 @@ export async function generateLabelPDF({
         // Calculate vertical position based on verticalAlign
         // Preview uses Konva's verticalAlign which handles baseline automatically
         // For PDF, we need to adjust based on font metrics
+        // Convert pt to mm for positioning calculations
+        const fontSizeMm = fontSizePt * 0.3528;
         let textY = elY;
         const verticalAlign = props.verticalAlign || 'top';
         
         if (verticalAlign === 'middle') {
-          textY = elY + elHeight / 2 + fontSizePt * 0.35;
+          textY = elY + elHeight / 2 + fontSizeMm * 0.35;
         } else if (verticalAlign === 'bottom') {
-          textY = elY + elHeight - fontSizePt * 0.1;
+          textY = elY + elHeight - fontSizeMm * 0.1;
         } else {
           // top - add small offset for baseline
-          textY = elY + fontSizePt * 0.35;
+          textY = elY + fontSizeMm * 0.35;
         }
         
         // Apply rotation if needed
