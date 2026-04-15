@@ -1,0 +1,114 @@
+name: Build Electron Desktop Apps
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18.x]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install frontend dependencies
+      run: cd frontend && npm ci && cd ..
+
+    - name: Build frontend
+      run: cd frontend && npm run build && cd ..
+
+    - name: Build Electron
+      run: npm run build:electron
+
+    - name: Build icons (Linux only)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+        mkdir -p build
+        convert -size 512x512 xc:'#4F46E5' -pointsize 30 -fill white -gravity center -annotate +0+0 "BoldLabels" build/icon.png || true
+
+    - name: Build Electron App (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: npm run build:linux
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Electron App (Windows)
+      if: matrix.os == 'windows-latest'
+      run: npm run build:win
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build Electron App (macOS)
+      if: matrix.os == 'macos-latest'
+      run: npm run build:mac
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload artifacts (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: boldlabels-linux
+        path: |
+          release/*.AppImage
+          release/*.deb
+
+    - name: Upload artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: boldlabels-windows
+        path: |
+          release/*.exe
+
+    - name: Upload artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      uses: actions/upload-artifact@v4
+      with:
+        name: boldlabels-macos
+        path: |
+          release/*.dmg
+          release/*.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/boldlabels-linux/*
+          artifacts/boldlabels-windows/*
+          artifacts/boldlabels-macos/*
+        draft: true
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
