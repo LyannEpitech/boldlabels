@@ -199,9 +199,11 @@ function drawTextElement(
     ? y + element.height - baselineOffset * 0.2
     : y + baselineOffset; // Top: add full offset to prevent clipping
 
-  doc.text(value, textX, textY, {
+  // Split text to fit within element width
+  const splitText = doc.splitTextToSize(value, element.width);
+  
+  doc.text(splitText, textX, textY, {
     align: align as any,
-    maxWidth: element.width,
   });
 }
 
