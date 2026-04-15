@@ -42,8 +42,9 @@ export async function generateLabelPDF({
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const availableWidth = pageWidth - pdfOptions.margins.left - pdfOptions.margins.right;
-  const availableHeight = pageHeight - pdfOptions.margins.top - pdfOptions.margins.bottom;
+  // Available space (not used since we use template dimensions directly)
+  // const availableWidth = pageWidth - pdfOptions.margins.left - pdfOptions.margins.right;
+  // const availableHeight = pageHeight - pdfOptions.margins.top - pdfOptions.margins.bottom;
 
   // Use template dimensions directly, not calculated from available space
   const labelWidth = template.width;
