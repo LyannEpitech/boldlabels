@@ -7,6 +7,7 @@ const electron_1 = require("electron");
 const path_1 = __importDefault(require("path"));
 const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
 const fs_1 = __importDefault(require("fs"));
+const crypto_1 = __importDefault(require("crypto"));
 let mainWindow;
 let db;
 function createWindow() {
@@ -117,7 +118,7 @@ electron_1.ipcMain.handle('db:getTemplate', (_, id) => {
 });
 electron_1.ipcMain.handle('db:createTemplate', (_, template) => {
     const now = new Date().toISOString();
-    const id = crypto.randomUUID();
+    const id = crypto_1.default.randomUUID();
     const stmt = db.prepare(`
     INSERT INTO templates (id, name, description, width, height, unit, 
       backgroundColor, borderWidth, borderColor, borderRadius, createdAt, updatedAt)
@@ -132,7 +133,7 @@ electron_1.ipcMain.handle('db:createTemplate', (_, template) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
         for (const el of template.elements) {
-            elementStmt.run(crypto.randomUUID(), id, el.type, el.variableName, el.x, el.y, el.width, el.height, el.rotation || 0, JSON.stringify(el.properties), el.zIndex || 0);
+            elementStmt.run(crypto_1.default.randomUUID(), id, el.type, el.variableName, el.x, el.y, el.width, el.height, el.rotation || 0, JSON.stringify(el.properties), el.zIndex || 0);
         }
     }
     return { id, ...template, createdAt: now, updatedAt: now };
@@ -162,7 +163,7 @@ electron_1.ipcMain.handle('db:updateTemplate', (_, id, updates) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
         for (const el of updates.elements) {
-            elementStmt.run(crypto.randomUUID(), id, el.type, el.variableName, el.x, el.y, el.width, el.height, el.rotation || 0, JSON.stringify(el.properties), el.zIndex || 0);
+            elementStmt.run(crypto_1.default.randomUUID(), id, el.type, el.variableName, el.x, el.y, el.width, el.height, el.rotation || 0, JSON.stringify(el.properties), el.zIndex || 0);
         }
     }
     return { id, ...updates, updatedAt: now };
@@ -190,7 +191,7 @@ electron_1.ipcMain.handle('db:getMappingsByTemplate', (_, templateId) => {
 });
 electron_1.ipcMain.handle('db:createMapping', (_, mapping) => {
     const now = new Date().toISOString();
-    const id = crypto.randomUUID();
+    const id = crypto_1.default.randomUUID();
     const stmt = db.prepare(`
     INSERT INTO mappings (id, name, templateId, columnMappings, csvSample, createdAt, updatedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?)

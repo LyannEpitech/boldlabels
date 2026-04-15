@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import Database from 'better-sqlite3';
 import fs from 'fs';
+import crypto from 'crypto';
 
 let mainWindow: BrowserWindow;
 let db: Database.Database;
