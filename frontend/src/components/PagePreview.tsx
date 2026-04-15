@@ -26,7 +26,8 @@ export function PagePreview({
   const pageWidth = pdfOptions.orientation === 'portrait' ? 210 : 297;
   const pageHeight = pdfOptions.orientation === 'portrait' ? 297 : 210;
   
-  // Calculate label size in pixels (same as LabelPreview with scale=0.5)
+  // Calculate label size in pixels (LabelPreview handles scaling internally with scale=0.5 default)
+  // LabelPreview renders at width * scale, so we need container to match
   const labelWidthPx = template.width * MM_TO_PX * 0.5;
   const labelHeightPx = template.height * MM_TO_PX * 0.5;
 

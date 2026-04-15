@@ -123,8 +123,8 @@ export function LabelPreview({ template, rowData, csvHeaders, mapping, scale = 0
 
   return (
     <Stage 
-      width={width * scale} 
-      height={height * scale} 
+      width={width} 
+      height={height} 
       scaleX={scale} 
       scaleY={scale}
     >
