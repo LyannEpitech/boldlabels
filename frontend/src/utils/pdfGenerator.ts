@@ -184,9 +184,18 @@ function drawTextElement(
   const align = props.align || 'left';
   
   // Margins to keep text inside the element
-  const margin = 2; // 2mm margin on each side
+  const margin = 1; // 1mm margin on each side
   const availableWidth = element.width - margin * 2;
   const availableHeight = element.height - margin * 2;
+  
+  // Auto-adjust font size if text is too long
+  let fontSize = props.fontSize || 12;
+  const textWidth = doc.getTextWidth(value);
+  if (textWidth > availableWidth) {
+    // Reduce font size to fit
+    fontSize = Math.max(8, fontSize * (availableWidth / textWidth) * 0.9);
+    doc.setFontSize(fontSize);
+  }
   
   const textX = align === 'center'
     ? x + element.width / 2
@@ -195,7 +204,6 @@ function drawTextElement(
     : x + margin;
 
   // Handle vertical align - jsPDF positions text by baseline
-  const fontSize = props.fontSize || 12;
   const lineHeight = fontSize * 0.4; // Line height in mm (approx)
   
   // Split text to fit within available width
