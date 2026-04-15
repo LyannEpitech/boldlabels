@@ -258,12 +258,26 @@ async function drawBarcodeElement(
 
   try {
     const JsBarcode = (await import('jsbarcode')).default;
-    JsBarcode(canvas, value || '123456789012', {
-      format: props.format || 'EAN13',
+    
+    // Validate and format barcode value based on format
+    const format = props.format || 'CODE128';
+    let barcodeValue = value || '';
+    
+    // Ensure valid barcode value
+    if (!barcodeValue) {
+      barcodeValue = format === 'EAN13' ? '1234567890128' : 'TEST123';
+    }
+    
+    // Calculate barcode height (leave space for text if displayed)
+    const displayValue = props.displayValue !== false;
+    const barcodeHeight = displayValue ? element.height * 0.7 : element.height * 0.9;
+    
+    JsBarcode(canvas, barcodeValue, {
+      format: format,
       width: 2,
-      height: element.height * MM_TO_PT * 0.6,
-      displayValue: props.displayValue !== false,
-      fontSize: element.height * 2,
+      height: barcodeHeight * 3, // JsBarcode uses pixels, multiply for resolution
+      displayValue: displayValue,
+      fontSize: Math.min(14, element.height * 0.2 * 3),
       lineColor: props.lineColor || '#000000',
       background: props.backgroundColor || '#FFFFFF',
       margin: 0,
@@ -275,6 +289,7 @@ async function drawBarcodeElement(
     });
   } catch (e) {
     // Fallback: draw placeholder
+    console.error('Barcode error:', e);
     withRotation(doc, element, x, y, () => {
       doc.setDrawColor('#cccccc');
       doc.setFillColor('#f5f5f5');
