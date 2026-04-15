@@ -182,27 +182,44 @@ function drawTextElement(
   doc.setTextColor(r, g, b);
 
   const align = props.align || 'left';
+  
+  // Margins to keep text inside the element
+  const margin = 2; // 2mm margin on each side
+  const availableWidth = element.width - margin * 2;
+  const availableHeight = element.height - margin * 2;
+  
   const textX = align === 'center'
     ? x + element.width / 2
     : align === 'right'
-    ? x + element.width
-    : x;
+    ? x + element.width - margin
+    : x + margin;
 
   // Handle vertical align - jsPDF positions text by baseline
-  // Need to add fontSize offset because y is the baseline position
   const fontSize = props.fontSize || 12;
-  const baselineOffset = fontSize * 0.8; // Approximate ascent from baseline to top
+  const lineHeight = fontSize * 0.4; // Line height in mm (approx)
   
-  const textY = props.verticalAlign === 'middle'
-    ? y + element.height / 2 + baselineOffset / 2
-    : props.verticalAlign === 'bottom'
-    ? y + element.height - baselineOffset * 0.2
-    : y + baselineOffset; // Top: add full offset to prevent clipping
-
-  // Split text to fit within element width
-  const splitText = doc.splitTextToSize(value, element.width);
+  // Split text to fit within available width
+  const splitText = doc.splitTextToSize(value, availableWidth);
   
-  doc.text(splitText, textX, textY, {
+  // Calculate total text height
+  const totalTextHeight = splitText.length * lineHeight;
+  
+  // Limit text to available height (truncate if too many lines)
+  const maxLines = Math.floor(availableHeight / lineHeight);
+  const finalText = splitText.slice(0, maxLines);
+  
+  // Calculate Y position based on vertical alignment
+  let textY: number;
+  if (props.verticalAlign === 'middle') {
+    textY = y + margin + (availableHeight - totalTextHeight) / 2 + lineHeight * 0.7;
+  } else if (props.verticalAlign === 'bottom') {
+    textY = y + element.height - margin - (finalText.length - 1) * lineHeight;
+  } else {
+    // Top alignment
+    textY = y + margin + lineHeight * 0.7;
+  }
+  
+  doc.text(finalText, textX, textY, {
     align: align as any,
   });
 }
