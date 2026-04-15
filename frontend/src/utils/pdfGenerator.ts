@@ -188,12 +188,15 @@ function drawTextElement(
   const availableWidth = element.width - margin * 2;
   const availableHeight = element.height - margin * 2;
   
-  // Auto-adjust font size if text is too long
+  // Auto-adjust font size if text is too long - FORCE RECOMPILE v2
   let fontSize = props.fontSize || 12;
   const textWidth = doc.getTextWidth(value);
+  console.log('[PDF] Text width:', textWidth, 'available:', availableWidth, 'fontSize:', fontSize);
   if (textWidth > availableWidth) {
     // Reduce font size to fit
-    fontSize = Math.max(8, fontSize * (availableWidth / textWidth) * 0.9);
+    const newFontSize = Math.max(6, fontSize * (availableWidth / textWidth) * 0.85);
+    console.log('[PDF] Reducing font size from', fontSize, 'to', newFontSize);
+    fontSize = newFontSize;
     doc.setFontSize(fontSize);
   }
   
