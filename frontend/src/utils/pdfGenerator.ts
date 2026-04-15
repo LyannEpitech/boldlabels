@@ -45,8 +45,9 @@ export async function generateLabelPDF({
   const availableWidth = pageWidth - pdfOptions.margins.left - pdfOptions.margins.right;
   const availableHeight = pageHeight - pdfOptions.margins.top - pdfOptions.margins.bottom;
 
-  const labelWidth = (availableWidth - (labelLayout.labelsPerRow - 1) * labelLayout.horizontalSpacing) / labelLayout.labelsPerRow;
-  const labelHeight = (availableHeight - (labelLayout.labelsPerColumn - 1) * labelLayout.verticalSpacing) / labelLayout.labelsPerColumn;
+  // Use template dimensions directly, not calculated from available space
+  const labelWidth = template.width;
+  const labelHeight = template.height;
 
   let currentRow = 0;
   let currentCol = 0;
