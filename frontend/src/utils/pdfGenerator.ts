@@ -49,13 +49,9 @@ export async function generateLabelPDF({
   const labelWidth = template.width;
   const labelHeight = template.height;
   
-  console.log('PDF Generation - Template dimensions:', { 
-    templateWidth: template.width, 
-    templateHeight: template.height,
-    labelWidth,
-    labelHeight,
-    unit: 'mm'
-  });
+  // Debug log - check actual values
+  console.log('[PDF] Template:', template.width, 'x', template.height, 'mm');
+  console.log('[PDF] Label size:', labelWidth, 'x', labelHeight, 'mm');
 
   let currentRow = 0;
   let currentCol = 0;
@@ -111,11 +107,8 @@ async function drawElement(
   const columnName = mapping[element.variableName];
   let value = element.variableName;
   
-  console.log(`Element ${element.variableName}: columnName=${columnName}, csvHeaders=${_csvHeaders}`);
-  
   if (columnName) {
     const colIndex = _csvHeaders.indexOf(columnName);
-    console.log(`  -> colIndex=${colIndex}, row[${colIndex}]=${row[colIndex]}`);
     if (colIndex !== -1) {
       value = row[colIndex] || '';
     }
