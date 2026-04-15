@@ -15,7 +15,7 @@ describe('PDF Generator', () => {
     const labelsPerColumn = Math.floor(availableHeight / labelHeight);
 
     expect(labelsPerRow).toBe(2);
-    expect(labelsPerColumn).toBe(11);
+    expect(labelsPerColumn).toBe(10); // 277 / 25.4 = 10.9, floor = 10
   });
 
   it('should convert mm to points correctly', () => {
