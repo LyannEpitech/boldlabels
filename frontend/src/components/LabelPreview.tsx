@@ -16,8 +16,8 @@ interface LabelPreviewProps {
 
 export function LabelPreview({ template, rowData, csvHeaders, mapping, scale = 0.5 }: LabelPreviewProps) {
   const [images, setImages] = useState<Record<string, HTMLImageElement>>({});
-  const width = template.width * MM_TO_PX * scale;
-  const height = template.height * MM_TO_PX * scale;
+  const width = template.width * MM_TO_PX;
+  const height = template.height * MM_TO_PX;
 
   // Generate barcodes and QR codes
   useEffect(() => {
@@ -122,14 +122,19 @@ export function LabelPreview({ template, rowData, csvHeaders, mapping, scale = 0
   };
 
   return (
-    <Stage width={width} height={height} scaleX={scale} scaleY={scale}>
+    <Stage 
+      width={width * scale} 
+      height={height * scale} 
+      scaleX={scale} 
+      scaleY={scale}
+    >
       <Layer>
         {/* Background */}
         <Rect
           x={0}
           y={0}
-          width={template.width * MM_TO_PX}
-          height={template.height * MM_TO_PX}
+          width={width}
+          height={height}
           fill={template.backgroundColor}
           stroke={template.borderColor}
           strokeWidth={template.borderWidth * MM_TO_PX}
