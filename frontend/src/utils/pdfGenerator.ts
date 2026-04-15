@@ -48,6 +48,14 @@ export async function generateLabelPDF({
   // Use template dimensions directly, not calculated from available space
   const labelWidth = template.width;
   const labelHeight = template.height;
+  
+  console.log('PDF Generation - Template dimensions:', { 
+    templateWidth: template.width, 
+    templateHeight: template.height,
+    labelWidth,
+    labelHeight,
+    unit: 'mm'
+  });
 
   let currentRow = 0;
   let currentCol = 0;
