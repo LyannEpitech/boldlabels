@@ -188,17 +188,29 @@ function drawTextElement(
   const availableWidth = element.width - margin * 2;
   const availableHeight = element.height - margin * 2;
   
-  // Auto-adjust font size if text is too long - FORCE RECOMPILE v2
+  // Auto-adjust font size if text is too long - FORCE RECOMPILE v3
   let fontSize = props.fontSize || 12;
-  const textWidth = doc.getTextWidth(value);
-  console.log('[PDF] Text width:', textWidth, 'available:', availableWidth, 'fontSize:', fontSize);
-  if (textWidth > availableWidth) {
-    // Reduce font size to fit
-    const newFontSize = Math.max(6, fontSize * (availableWidth / textWidth) * 0.85);
-    console.log('[PDF] Reducing font size from', fontSize, 'to', newFontSize);
-    fontSize = newFontSize;
-    doc.setFontSize(fontSize);
+  
+  // Binary search for best font size
+  let minSize = 6;
+  let maxSize = fontSize;
+  let bestSize = minSize;
+  
+  for (let i = 0; i < 10; i++) {
+    const testSize = (minSize + maxSize) / 2;
+    doc.setFontSize(testSize);
+    const testWidth = doc.getTextWidth(value);
+    if (testWidth <= availableWidth) {
+      bestSize = testSize;
+      minSize = testSize;
+    } else {
+      maxSize = testSize;
+    }
   }
+  
+  fontSize = bestSize;
+  doc.setFontSize(fontSize);
+  console.log('[PDF] Final font size:', fontSize, 'text width:', doc.getTextWidth(value), 'available:', availableWidth);
   
   const textX = align === 'center'
     ? x + element.width / 2
