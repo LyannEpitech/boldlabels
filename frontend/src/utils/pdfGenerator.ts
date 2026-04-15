@@ -50,9 +50,8 @@ export async function generateLabelPDF({
   const labelWidth = template.width;
   const labelHeight = template.height;
   
-  // Debug log - check actual values
-  console.log('[PDF] Template:', template.width, 'x', template.height, 'mm');
-  console.log('[PDF] Label size:', labelWidth, 'x', labelHeight, 'mm');
+  // Debug - alert to force visibility
+  alert(`PDF Template: ${template.width} x ${template.height} mm\nLabel: ${labelWidth} x ${labelHeight} mm`);
 
   let currentRow = 0;
   let currentCol = 0;
