@@ -35,8 +35,9 @@ export async function generateLabelPDF({
   pdfOptions,
   labelLayout,
 }: GeneratePDFOptions): Promise<Buffer> {
+  // Use points as unit to have better control over scaling
   const doc = new jsPDF({
-    unit: 'mm',
+    unit: 'pt',
     format: pdfOptions.pageSize.toLowerCase(),
     orientation: pdfOptions.orientation,
   });
@@ -44,12 +45,18 @@ export async function generateLabelPDF({
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  const availableWidth = pageWidth - pdfOptions.margins.left - pdfOptions.margins.right;
-  const availableHeight = pageHeight - pdfOptions.margins.top - pdfOptions.margins.bottom;
+  // Convert margins from mm to pt
+  const marginTop = pdfOptions.margins.top * MM_TO_PT;
+  const marginRight = pdfOptions.margins.right * MM_TO_PT;
+  const marginBottom = pdfOptions.margins.bottom * MM_TO_PT;
+  const marginLeft = pdfOptions.margins.left * MM_TO_PT;
 
-  // Use template dimensions for label size, not calculated
-  const labelWidth = template.width;
-  const labelHeight = template.height;
+  const availableWidth = pageWidth - marginLeft - marginRight;
+  const availableHeight = pageHeight - marginTop - marginBottom;
+
+  // Convert template dimensions from mm to pt
+  const labelWidth = template.width * MM_TO_PT;
+  const labelHeight = template.height * MM_TO_PT;
 
   let currentRow = 0;
   let currentCol = 0;
@@ -64,8 +71,12 @@ export async function generateLabelPDF({
       currentCol = 0;
     }
 
-    const x = pdfOptions.margins.left + currentCol * (labelWidth + labelLayout.horizontalSpacing);
-    const y = pdfOptions.margins.top + currentRow * (labelHeight + labelLayout.verticalSpacing);
+    // Convert spacing from mm to pt
+    const horizontalSpacing = labelLayout.horizontalSpacing * MM_TO_PT;
+    const verticalSpacing = labelLayout.verticalSpacing * MM_TO_PT;
+    
+    const x = marginLeft + currentCol * (labelWidth + horizontalSpacing);
+    const y = marginTop + currentRow * (labelHeight + verticalSpacing);
 
     // Draw label background
     doc.setFillColor(template.backgroundColor);
@@ -74,7 +85,7 @@ export async function generateLabelPDF({
     // Draw label border
     if (template.borderWidth > 0) {
       doc.setDrawColor(template.borderColor);
-      doc.setLineWidth(template.borderWidth);
+      doc.setLineWidth(template.borderWidth * MM_TO_PT);
       doc.rect(x, y, labelWidth, labelHeight, 'S');
     }
 
@@ -89,9 +100,11 @@ export async function generateLabelPDF({
         }
       }
 
-      // Element position relative to label
-      const elX = x + element.x;
-      const elY = y + element.y;
+      // Element position relative to label (convert mm to pt)
+      const elX = x + element.x * MM_TO_PT;
+      const elY = y + element.y * MM_TO_PT;
+      const elWidth = element.width * MM_TO_PT;
+      const elHeight = element.height * MM_TO_PT;
 
       // Parse properties (handle both string and object)
       let props: any = {};
@@ -105,32 +118,31 @@ export async function generateLabelPDF({
 
       if (element.type === 'text') {
         doc.setFont(props.fontFamily || 'helvetica');
-        // Convert fontSize from pt to mm (jsPDF uses mm with our config)
-        const fontSizeMm = (props.fontSize || 12) / 2.83465;
-        doc.setFontSize(fontSizeMm);
+        // fontSize is in pt, use directly
+        doc.setFontSize(props.fontSize || 12);
         doc.setTextColor(props.color || '#000000');
         
         const align = props.align || 'left';
-        const textX = align === 'center' ? elX + (element.width || 50) / 2 : 
-                     align === 'right' ? elX + (element.width || 50) : elX;
+        const textX = align === 'center' ? elX + elWidth / 2 : 
+                     align === 'right' ? elX + elWidth : elX;
         
         // Offset Y to align with preview (jsPDF positions from baseline)
-        const baselineOffset = fontSizeMm * 0.35;
+        const baselineOffset = (props.fontSize || 12) * 0.35;
         
         doc.text(String(value), textX, elY + baselineOffset, {
           align: align as any,
-          maxWidth: element.width || 50,
+          maxWidth: elWidth,
         });
       } else if (element.type === 'barcode') {
         // Draw barcode placeholder with value
         doc.setDrawColor(props.lineColor || '#000000');
         doc.setFillColor(props.backgroundColor || '#FFFFFF');
-        doc.rect(elX, elY, element.width || 40, element.height || 20, 'FD');
+        doc.rect(elX, elY, elWidth, elHeight, 'FD');
         
         doc.setFont('helvetica');
         doc.setFontSize(8);
         doc.setTextColor(props.lineColor || '#000000');
-        doc.text(String(value).substring(0, 20), elX + 2, elY + (element.height || 20) / 2);
+        doc.text(String(value).substring(0, 20), elX + 2, elY + elHeight / 2);
         
         // Note: Real barcode generation would require a barcode library
         // For now, we display the value as text
@@ -138,28 +150,28 @@ export async function generateLabelPDF({
         // Draw QR placeholder
         doc.setDrawColor(props.color || '#000000');
         doc.setFillColor(props.backgroundColor || '#FFFFFF');
-        doc.rect(elX, elY, element.width || 30, element.height || 30, 'FD');
+        doc.rect(elX, elY, elWidth, elHeight, 'FD');
         
         doc.setFontSize(6);
         doc.setTextColor(props.color || '#000000');
-        doc.text('QR', elX + (element.width || 30) / 2 - 3, elY + (element.height || 30) / 2);
+        doc.text('QR', elX + elWidth / 2 - 3, elY + elHeight / 2);
       } else if (element.type === 'rectangle') {
         doc.setDrawColor(props.strokeColor || '#000000');
         doc.setFillColor(props.fillColor || 'transparent');
-        doc.setLineWidth(props.strokeWidth || 1);
+        doc.setLineWidth((props.strokeWidth || 1) * MM_TO_PT);
         
         if (props.fillColor && props.fillColor !== 'transparent') {
-          doc.rect(elX, elY, element.width || 20, element.height || 10, 'FD');
+          doc.rect(elX, elY, elWidth, elHeight, 'FD');
         } else {
-          doc.rect(elX, elY, element.width || 20, element.height || 10, 'S');
+          doc.rect(elX, elY, elWidth, elHeight, 'S');
         }
       } else if (element.type === 'image') {
         // Image placeholder
         doc.setDrawColor('#CCCCCC');
-        doc.rect(elX, elY, element.width || 30, element.height || 30, 'S');
+        doc.rect(elX, elY, elWidth, elHeight, 'S');
         doc.setFontSize(8);
         doc.setTextColor('#999999');
-        doc.text('IMG', elX + (element.width || 30) / 2 - 5, elY + (element.height || 30) / 2);
+        doc.text('IMG', elX + elWidth / 2 - 5, elY + elHeight / 2);
       }
     }
 
