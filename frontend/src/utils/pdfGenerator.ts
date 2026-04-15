@@ -188,13 +188,14 @@ function drawTextElement(
     ? x + element.width
     : x;
 
-  // Handle vertical align
-  const textHeight = (props.fontSize || 12) * 0.35;
+  // Handle vertical align - jsPDF positions text by baseline
+  // Adjust for better alignment with preview
+  const fontSize = props.fontSize || 12;
   const textY = props.verticalAlign === 'middle'
-    ? y + element.height / 2 + textHeight / 2
+    ? y + element.height / 2 + fontSize * 0.15  // Middle: small adjustment
     : props.verticalAlign === 'bottom'
-    ? y + element.height - textHeight
-    : y + textHeight;
+    ? y + element.height - fontSize * 0.1  // Bottom: small padding
+    : y + fontSize * 0.25;  // Top: start a bit below top edge
 
   doc.text(value, textX, textY, {
     align: align as any,
