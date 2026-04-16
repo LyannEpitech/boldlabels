@@ -249,9 +249,11 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         .catch(console.error);
     },
     
-    updateElement: (id, updates) => {
+    updateElement: async (id, updates) => {
       const { template } = get();
       if (!template) return;
+      
+      console.log('[Store] updateElement called:', id, Object.keys(updates));
       
       const updated: Template = {
         ...template,
@@ -264,10 +266,17 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       set({ template: updated });
       
       // Auto-save to backend
-      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+      try {
+        const result = await dbService.updateTemplate(template.id, { elements: updated.elements });
+        console.log('[Store] updateElement saved, elements count:', result.elements?.length);
+      } catch (error) {
+        console.error('[Store] Failed to save element update:', error);
+        // Revert on error
+        set({ template });
+      }
     },
     
-    removeElement: (id) => {
+    removeElement: async (id) => {
       const { template } = get();
       if (!template) return;
       
@@ -285,7 +294,13 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       });
       
       // Auto-save to backend
-      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
+      try {
+        await dbService.updateTemplate(template.id, { elements: updated.elements });
+        console.log('[Store] removeElement saved');
+      } catch (error) {
+        console.error('[Store] Failed to save element removal:', error);
+        set({ template });
+      }
     },
     
     selectElement: (id) => set({ selectedElementId: id }),
