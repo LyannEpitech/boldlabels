@@ -50,9 +50,6 @@ export async function generateLabelPDF({
   // Use template dimensions directly, not calculated from available space
   const labelWidth = template.width;
   const labelHeight = template.height;
-  
-  // Debug - alert to force visibility
-  alert(`PDF Template: ${template.width} x ${template.height} mm\nLabel: ${labelWidth} x ${labelHeight} mm`);
 
   let currentRow = 0;
   let currentCol = 0;
@@ -263,21 +260,58 @@ async function drawBarcodeElement(
     const format = props.format || 'CODE128';
     let barcodeValue = value || '';
     
-    // Ensure valid barcode value
+    // Ensure valid barcode value based on format
     if (!barcodeValue) {
-      barcodeValue = format === 'EAN13' ? '1234567890128' : 'TEST123';
+      barcodeValue = format === 'EAN13' ? '1234567890128' : 
+                    format === 'EAN8' ? '12345670' :
+                    format === 'UPC' ? '123456789012' : 'TEST123';
+    }
+    
+    // Validate EAN-13 (13 digits)
+    if (format === 'EAN13' && !/^\d{13}$/.test(barcodeValue)) {
+      // Try to pad or use default
+      const digits = barcodeValue.replace(/\D/g, '');
+      if (digits.length === 12) {
+        // Calculate check digit
+        const sum = digits.split('').reduce((acc, digit, i) => {
+          return acc + parseInt(digit) * (i % 2 === 0 ? 1 : 3);
+        }, 0);
+        const checkDigit = (10 - (sum % 10)) % 10;
+        barcodeValue = digits + checkDigit;
+      } else if (digits.length !== 13) {
+        barcodeValue = '1234567890128'; // Default valid EAN13
+      }
+    }
+    
+    // Validate EAN-8 (8 digits)
+    if (format === 'EAN8' && !/^\d{8}$/.test(barcodeValue)) {
+      const digits = barcodeValue.replace(/\D/g, '');
+      if (digits.length !== 8) {
+        barcodeValue = '12345670'; // Default valid EAN8
+      }
+    }
+    
+    // Validate UPC (12 digits)
+    if (format === 'UPC' && !/^\d{12}$/.test(barcodeValue)) {
+      const digits = barcodeValue.replace(/\D/g, '');
+      if (digits.length !== 12) {
+        barcodeValue = '123456789012'; // Default valid UPC
+      }
     }
     
     // Calculate barcode height (leave space for text if displayed)
     const displayValue = props.displayValue !== false;
     const barcodeHeight = displayValue ? element.height * 0.7 : element.height * 0.9;
     
+    // Use CODE128 as fallback for invalid formats
+    const validFormat = ['EAN13', 'EAN8', 'UPC', 'CODE128'].includes(format) ? format : 'CODE128';
+    
     JsBarcode(canvas, barcodeValue, {
-      format: format,
+      format: validFormat,
       width: 2,
-      height: barcodeHeight * 3, // JsBarcode uses pixels, multiply for resolution
+      height: Math.max(30, barcodeHeight * 3), // Minimum 30px height
       displayValue: displayValue,
-      fontSize: Math.min(14, element.height * 0.2 * 3),
+      fontSize: Math.min(14, Math.max(8, element.height * 0.15 * 3)),
       lineColor: props.lineColor || '#000000',
       background: props.backgroundColor || '#FFFFFF',
       margin: 0,
