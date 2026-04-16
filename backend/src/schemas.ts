@@ -16,6 +16,7 @@ export const TemplateSchema = z.object({
 export const TemplateUpdateSchema = TemplateSchema.partial();
 
 export const TemplateElementSchema = z.object({
+  id: z.string().optional(),
   type: z.enum(['text', 'barcode', 'qrcode', 'image', 'rectangle']),
   variableName: z.string().min(1),
   x: z.number(),
@@ -25,6 +26,7 @@ export const TemplateElementSchema = z.object({
   rotation: z.number().default(0),
   properties: z.record(z.any()),
   zIndex: z.number().int(),
+  templateId: z.string().optional(),
 });
 
 export const ColumnMappingSchema = z.object({
