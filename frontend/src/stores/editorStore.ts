@@ -130,6 +130,9 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       const { template } = get();
       if (!template) return;
       
+      console.log('[Store] updateTemplate called:', Object.keys(updates));
+      console.log('[Store] Current elements count:', template.elements?.length);
+      
       // Update local state immediately for responsive UI
       const localUpdated: Template = {
         ...template,
@@ -147,6 +150,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       // Save to backend in background
       try {
         const updated = await dbService.updateTemplate(template.id, updates);
+        console.log('[Store] Backend returned elements count:', updated.elements?.length);
+        
         get().saveToHistory();
         
         // Merge backend response with local state to preserve elements if backend doesn't return them
@@ -157,6 +162,8 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           elements: updates.elements !== undefined ? updated.elements : localUpdated.elements,
         };
         
+        console.log('[Store] Merged elements count:', mergedTemplate.elements?.length);
+        
         set({
           template: mergedTemplate,
           templates: get().templates.map((t) =>
@@ -164,7 +171,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           ),
         });
       } catch (error) {
-        console.error('Failed to update template:', error);
+        console.error('[Store] Failed to update template:', error);
         // Revert to original on error
         set({ template, error: 'Failed to save changes' });
       }
