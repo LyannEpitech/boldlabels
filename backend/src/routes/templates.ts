@@ -129,8 +129,10 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       res.json(template);
     } catch (error) {
       if (error instanceof Error && error.name === 'ZodError') {
-        return res.status(400).json({ error: 'Validation failed', details: error });
+        console.error('Zod validation error:', JSON.stringify(error, null, 2));
+        return res.status(400).json({ error: 'Validation failed', details: (error as any).issues });
       }
+      console.error('Update template error:', error);
       res.status(500).json({ error: 'Failed to update template' });
     }
   });
