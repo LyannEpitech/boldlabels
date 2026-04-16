@@ -94,7 +94,8 @@ export function createTemplateRoutes(prisma: PrismaClient) {
   // PUT /api/templates/:id - Full update template (with elements)
   router.put('/:id', async (req, res) => {
     try {
-      const validated = TemplateSchema.parse(req.body);
+      // Use partial schema for updates - only validate fields that are provided
+      const validated = TemplateUpdateSchema.parse(req.body);
       const elements = req.body.elements || [];
       
       // Validate elements and convert properties to string
@@ -108,19 +109,21 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       
       // Use transaction to update template and elements
       const template = await prisma.$transaction(async (tx) => {
-        // Delete existing elements
-        await tx.templateElement.deleteMany({
-          where: { templateId: req.params.id },
-        });
+        // Delete existing elements if new elements are provided
+        if (req.body.elements !== undefined) {
+          await tx.templateElement.deleteMany({
+            where: { templateId: req.params.id },
+          });
+        }
         
         // Update template with new elements
         return tx.template.update({
           where: { id: req.params.id },
           data: {
             ...validated,
-            elements: {
+            elements: req.body.elements !== undefined ? {
               create: validatedElements,
-            },
+            } : undefined,
           },
           include: { elements: true },
         });
