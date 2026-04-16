@@ -267,6 +267,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       
       // Auto-save to backend
       try {
+        console.log('[Store] Sending elements:', JSON.stringify(updated.elements.map(e => ({ id: e.id, type: e.type, variableName: e.variableName }))));
         const result = await dbService.updateTemplate(template.id, { elements: updated.elements });
         console.log('[Store] updateElement saved, elements count:', result.elements?.length);
       } catch (error) {
