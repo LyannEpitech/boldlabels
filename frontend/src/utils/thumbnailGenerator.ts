@@ -1,4 +1,4 @@
-import { Template } from '../types';
+import type { Template } from '../types';
 
 /**
  * Generate a thumbnail PNG from a template
@@ -66,7 +66,7 @@ export async function generateThumbnail(
 
     switch (element.type) {
       case 'text':
-        const textProps = JSON.parse(element.properties || '{}');
+        const textProps = JSON.parse((element.properties as string) || '{}');
         ctx.fillStyle = textProps.color || '#000000';
         ctx.font = `${textProps.fontStyle === 'bold' ? 'bold ' : ''}${Math.max(8, (textProps.fontSize || 12) * scale * 0.3)}px ${textProps.fontFamily || 'Arial'}`;
         ctx.textAlign = (textProps.align || 'left') as CanvasTextAlign;
@@ -123,7 +123,7 @@ export async function generateThumbnail(
         break;
 
       case 'rectangle':
-        const rectProps = JSON.parse(element.properties || '{}');
+        const rectProps = JSON.parse((element.properties as string) || '{}');
         ctx.fillStyle = rectProps.fillColor || 'transparent';
         ctx.fillRect(ex, ey, ew, eh);
         if (rectProps.strokeColor) {
