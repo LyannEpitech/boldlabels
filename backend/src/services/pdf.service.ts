@@ -254,7 +254,27 @@ export async function generateLabelPDF({
           const barcodeFormat = props.format || 'CODE128';
           const barcodePNG = await generateBarcodePNG(String(value), barcodeFormat);
           
-          doc.addImage(barcodePNG, 'PNG', elX, elY, elWidth, elHeight);
+          // Preserve aspect ratio - calculate dimensions to fit within element bounds
+          const imgInfo = doc.getImageProperties(barcodePNG);
+          const imgRatio = imgInfo.width / imgInfo.height;
+          const elemRatio = elWidth / elHeight;
+          
+          let drawWidth = elWidth;
+          let drawHeight = elHeight;
+          let drawX = elX;
+          let drawY = elY;
+          
+          if (imgRatio > elemRatio) {
+            // Image is wider than element - fit to width
+            drawHeight = elWidth / imgRatio;
+            drawY = elY + (elHeight - drawHeight) / 2; // Center vertically
+          } else {
+            // Image is taller than element - fit to height  
+            drawWidth = elHeight * imgRatio;
+            drawX = elX + (elWidth - drawWidth) / 2; // Center horizontally
+          }
+          
+          doc.addImage(barcodePNG, 'PNG', drawX, drawY, drawWidth, drawHeight);
         } catch (e: any) {
           console.warn(`[PDF Service] Barcode fallback for "${value}": ${e.message}`);
           // Fallback: draw text placeholder
@@ -270,6 +290,7 @@ export async function generateLabelPDF({
         }
       } else if (element.type === 'qrcode') {
         try {
+          // Generate QR at requested size but preserve square aspect ratio
           const qrSize = Math.min(elWidth, elHeight);
           const qrPNG = await generateQRPNG(String(value), qrSize);
           const offsetX = elX + (elWidth - qrSize) / 2;
