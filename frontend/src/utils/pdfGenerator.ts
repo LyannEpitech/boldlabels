@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { Template, TemplateElement, PDFOptions, LabelLayout } from '../types';
 
-const MM_TO_PT = 2.83465;
+// MM_TO_PT conversion handled inline for precision
 
 function withRotation(
   _doc: jsPDF,
@@ -195,9 +195,9 @@ function drawTextElement(
   const ellipsis = '...';
   const ellipsisWidth = doc.getTextWidth(ellipsis);
   
-  while (textWidth > availableWidth && displayValue.length > 0) {
+  while (textWidth > availableWidth - ellipsisWidth && displayValue.length > 0) {
     displayValue = displayValue.slice(0, -1);
-    textWidth = doc.getTextWidth(displayValue + ellipsis);
+    textWidth = doc.getTextWidth(displayValue + ellipsis) + ellipsisWidth * 0.1;
   }
   
   if (displayValue.length < value.length) {
