@@ -27,7 +27,7 @@ export interface TemplateElement {
   width: number;
   height: number;
   rotation: number;
-  properties: ElementProperties;
+  properties: ElementProperties | string;
   zIndex: number;
 }
 

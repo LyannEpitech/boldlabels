@@ -11,13 +11,15 @@ function mmToPx(mm: number): number {
 }
 
 interface ImageElementProps {
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
   element: TemplateElement;
   isSelected: boolean;
   onSelect: () => void;
   onChange: (updates: Partial<TemplateElement>) => void;
 }
 
-export function ImageElement({ element, isSelected, onSelect, onChange }: ImageElementProps) {
+export function ImageElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: ImageElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { snapToGrid, gridSize } = useEditorStore();
@@ -63,6 +65,7 @@ export function ImageElement({ element, isSelected, onSelect, onChange }: ImageE
         draggable
         onClick={onSelect}
         onTap={onSelect}
+        onDragStart={onDragStart}
         onDragEnd={(e) => {
           let x = e.target.x() / MM_TO_PX;
           let y = e.target.y() / MM_TO_PX;
@@ -71,6 +74,7 @@ export function ImageElement({ element, isSelected, onSelect, onChange }: ImageE
             y = Math.round(y / gridSize) * gridSize;
           }
           onChange({ x, y });
+          onDragEnd?.();
         }}
         onTransformEnd={(e) => {
           const node = e.target;

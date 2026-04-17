@@ -6,7 +6,9 @@ import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Input } from '../components/ui/Input';
 import { useState, useEffect } from 'react';
-import { Plus, Copy, Trash2, Edit3, FileText, Download, Settings } from 'lucide-react';
+import { Plus, Copy, Trash2, Edit3, FileText, Download, Settings, LayoutGrid } from 'lucide-react';
+import TemplateGallery from '../components/TemplateGallery';
+import { generateThumbnailPlaceholder } from '../utils/thumbnailGenerator';
 
 const PRESETS = [
   { name: 'Avery 5160', width: 63.5, height: 25.4 },
@@ -23,6 +25,7 @@ export function DashboardPage() {
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [customWidth, setCustomWidth] = useState(50);
   const [customHeight, setCustomHeight] = useState(25);
+  const [showGallery, setShowGallery] = useState(false);
 
   // Load data on mount
   useEffect(() => {
@@ -71,9 +74,18 @@ export function DashboardPage() {
             <h1 className="text-3xl font-bold text-gray-900">🏷️ BoldLabels</h1>
             <p className="text-gray-600 mt-1">Gérez vos templates et mappings</p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus size={18} />}>
-            Nouveau template
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="secondary" 
+              onClick={() => setShowGallery(true)} 
+              leftIcon={<LayoutGrid size={18} />}
+            >
+              Depuis un template
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)} leftIcon={<Plus size={18} />}>
+              Nouveau template
+            </Button>
+          </div>
         </div>
 
         {/* Two Column Layout */}
@@ -92,32 +104,43 @@ export function DashboardPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                {templates.map((template) => (
-                  <Card key={template.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base">{template.name}</CardTitle>
-                      <CardDescription className="text-xs">
-                        {template.width}×{template.height}mm • {template.elements.length} éléments
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex gap-1 pt-2">
-                      <Link to={`/editor/${template.id}`} className="flex-1">
-                        <Button variant="primary" size="sm" className="w-full" leftIcon={<Edit3 size={14} />} onClick={() => handleEdit(template.id)}>
-                          Éditer
-                        </Button>
-                      </Link>
-                      <Link to={`/mapping/${template.id}`}>
-                        <Button variant="secondary" size="sm" leftIcon={<Settings size={14} />}>
-                          Mapper
-                        </Button>
-                      </Link>
-                      <Button variant="ghost" size="sm" leftIcon={<Copy size={14} />} onClick={() => duplicateTemplate(template.id)} />
-                      <Button variant="ghost" size="sm" className="text-red-500" leftIcon={<Trash2 size={14} />} onClick={() => {
-                        if (confirm('Supprimer ce template ?')) deleteTemplate(template.id);
-                      }} />
-                    </CardFooter>
-                  </Card>
-                ))}
+                {templates.map((template) => {
+                  const thumbnail = generateThumbnailPlaceholder(template);
+                  return (
+                    <Card key={template.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                      {/* Thumbnail */}
+                      <div className="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                        <img 
+                          src={thumbnail.dataUrl} 
+                          alt={template.name}
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{template.name}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {template.width}×{template.height}mm • {template.elements.length} éléments
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex gap-1 pt-2">
+                        <Link to={`/editor/${template.id}`} className="flex-1">
+                          <Button variant="primary" size="sm" className="w-full" leftIcon={<Edit3 size={14} />} onClick={() => handleEdit(template.id)}>
+                            Éditer
+                          </Button>
+                        </Link>
+                        <Link to={`/mapping/${template.id}`}>
+                          <Button variant="secondary" size="sm" leftIcon={<Settings size={14} />}>
+                            Mapper
+                          </Button>
+                        </Link>
+                        <Button variant="ghost" size="sm" leftIcon={<Copy size={14} />} onClick={() => duplicateTemplate(template.id)} />
+                        <Button variant="ghost" size="sm" className="text-red-500" leftIcon={<Trash2 size={14} />} onClick={() => {
+                          if (confirm('Supprimer ce template ?')) deleteTemplate(template.id);
+                        }} />
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -232,6 +255,17 @@ export function DashboardPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Template Gallery Modal */}
+      {showGallery && (
+        <TemplateGallery
+          onSelectTemplate={async (presetTemplate) => {
+            await createTemplate(presetTemplate);
+            setShowGallery(false);
+          }}
+          onClose={() => setShowGallery(false)}
+        />
+      )}
     </div>
   );
 }

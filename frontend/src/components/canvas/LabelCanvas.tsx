@@ -1,11 +1,13 @@
 import { Stage, Layer, Rect } from 'react-konva';
 import Konva from 'konva';
+import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import { TextElement } from './elements/TextElement';
 import { BarcodeElement } from './elements/BarcodeElement';
 import { QRCodeElement } from './elements/QRCodeElement';
 import { ImageElement } from './elements/ImageElement';
 import { RectangleElement } from './elements/RectangleElement';
+import SmartGuides from './SmartGuides';
 import type { TemplateElement } from '../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -19,27 +21,43 @@ interface CanvasElementProps {
   isSelected: boolean;
   onSelect: () => void;
   onChange: (updates: Partial<TemplateElement>) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
-function CanvasElement({ element, isSelected, onSelect, onChange }: CanvasElementProps) {
+function CanvasElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: CanvasElementProps) {
+  const commonProps = {
+    element,
+    isSelected,
+    onSelect,
+    onChange,
+    onDragStart,
+    onDragEnd
+  };
+
   switch (element.type) {
     case 'text':
-      return <TextElement element={element} isSelected={isSelected} onSelect={onSelect} onChange={onChange} />;
+      return <TextElement {...commonProps} />;
     case 'barcode':
-      return <BarcodeElement element={element} isSelected={isSelected} onSelect={onSelect} onChange={onChange} />;
+      return <BarcodeElement {...commonProps} />;
     case 'qrcode':
-      return <QRCodeElement element={element} isSelected={isSelected} onSelect={onSelect} onChange={onChange} />;
+      return <QRCodeElement {...commonProps} />;
     case 'image':
-      return <ImageElement element={element} isSelected={isSelected} onSelect={onSelect} onChange={onChange} />;
+      return <ImageElement {...commonProps} />;
     case 'rectangle':
-      return <RectangleElement element={element} isSelected={isSelected} onSelect={onSelect} onChange={onChange} />;
+      return <RectangleElement {...commonProps} />;
     default:
       return null;
   }
 }
 
-export function LabelCanvas() {
+interface LabelCanvasProps {
+  showSmartGuides?: boolean;
+}
+
+export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const { template, selectedElementId, selectElement, updateElement, zoom, showGrid } = useEditorStore();
+  const [draggedElement, setDraggedElement] = useState<TemplateElement | null>(null);
   
   if (!template) {
     return (
@@ -89,6 +107,14 @@ export function LabelCanvas() {
       selectElement(null);
     }
   };
+
+  const handleDragStart = (element: TemplateElement) => {
+    setDraggedElement(element);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedElement(null);
+  };
   
   return (
     <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-auto p-8">
@@ -112,8 +138,22 @@ export function LabelCanvas() {
                 isSelected={selectedElementId === element.id}
                 onSelect={() => selectElement(element.id)}
                 onChange={(updates) => updateElement(element.id, updates)}
+                onDragStart={() => handleDragStart(element)}
+                onDragEnd={handleDragEnd}
               />
             ))}
+
+            {/* Smart Guides */}
+            {showSmartGuides && (
+              <SmartGuides
+                elements={template.elements}
+                selectedElementId={selectedElementId}
+                draggedElement={draggedElement}
+                canvasWidth={width}
+                canvasHeight={height}
+                scale={zoom}
+              />
+            )}
           </Layer>
         </Stage>
       </div>
