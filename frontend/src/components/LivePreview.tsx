@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import type { Template, TemplateElement } from '../types';
-import { Stage, Layer, Rect, Text } from 'react-konva';
+import React, { useState, useEffect } from 'react';
+import { Template, TemplateElement } from '../types';
+import { Stage, Layer, Rect, Text, Image as KonvaImage } from 'react-konva';
+import useImage from 'use-image';
 
 interface LivePreviewProps {
   template: Template;
@@ -17,7 +18,7 @@ const sampleData: Record<string, string> = {
   url: 'https://boldlabels.app'
 };
 
-const BarcodePreview: React.FC<{ element: TemplateElement }> = ({ element }) => {
+const BarcodePreview: React.FC<{ element: TemplateElement; value: string }> = ({ element, value }) => {
   return (
     <Rect
       x={element.x}
@@ -31,8 +32,8 @@ const BarcodePreview: React.FC<{ element: TemplateElement }> = ({ element }) => 
   );
 };
 
-const QRCodePreview: React.FC<{ element: TemplateElement }> = ({ element }) => {
-  const properties = JSON.parse((element.properties as string) as string || '{}');
+const QRCodePreview: React.FC<{ element: TemplateElement; value: string }> = ({ element, value }) => {
+  const properties = JSON.parse(element.properties || '{}');
   const bgColor = properties.backgroundColor || '#FFFFFF';
   
   return (
@@ -49,12 +50,12 @@ const QRCodePreview: React.FC<{ element: TemplateElement }> = ({ element }) => {
 };
 
 const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) => {
-  const [scale] = useState(2);
+  const [scale, setScale] = useState(2);
   const stageWidth = template.width * scale;
   const stageHeight = template.height * scale;
 
   const renderElement = (element: TemplateElement) => {
-    const properties = JSON.parse((element.properties as string) as string || '{}');
+    const properties = JSON.parse(element.properties || '{}');
     const value = sampleData[element.variableName] || `[${element.variableName}]`;
 
     switch (element.type) {
@@ -83,6 +84,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
           <BarcodePreview
             key={element.id}
             element={{ ...element, x: element.x * scale, y: element.y * scale, width: element.width * scale, height: element.height * scale }}
+            value={value}
           />
         );
 
@@ -91,6 +93,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
           <QRCodePreview
             key={element.id}
             element={{ ...element, x: element.x * scale, y: element.y * scale, width: element.width * scale, height: element.height * scale }}
+            value={value}
           />
         );
 
@@ -109,7 +112,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
         );
 
       case 'rectangle':
-        const rectProps = JSON.parse((element.properties as string) as string || '{}');
+        const rectProps = JSON.parse(element.properties || '{}');
         return (
           <Rect
             key={element.id}
@@ -119,7 +122,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
             height={element.height * scale}
             fill={rectProps.fillColor || 'transparent'}
             stroke={rectProps.strokeColor || '#000000'}
-            strokeWidth={(rectProps.strokeWidth || 1) * scale}
+            strokeWidth={rectProps.strokeWidth || 1}
             rotation={element.rotation}
           />
         );
@@ -147,9 +150,9 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
         <div className="mb-4 text-sm text-gray-600">
           Données d'exemple :
           <ul className="mt-1 space-y-1 text-xs">
-            {Object.entries(sampleData).map(([key, val]) => (
+            {Object.entries(sampleData).map(([key, value]) => (
               <li key={key}>
-                <span className="font-mono bg-gray-200 px-1 rounded">{key}</span>: {val}
+                <span className="font-mono bg-gray-200 px-1 rounded">{key}</span>: {value}
               </li>
             ))}
           </ul>

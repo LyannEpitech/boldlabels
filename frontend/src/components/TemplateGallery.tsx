@@ -1,6 +1,6 @@
 import React from 'react';
-import { presetTemplates, type PresetTemplate } from '../data/presetTemplates';
-import type { Template } from '../types';
+import { presetTemplates, PresetTemplate } from '../data/presetTemplates';
+import { Template } from '../types';
 
 interface TemplateGalleryProps {
   onSelectTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => void;
