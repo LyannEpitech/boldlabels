@@ -112,8 +112,22 @@ export function LabelCanvas() {
                 isSelected={selectedElementId === element.id}
                 onSelect={() => selectElement(element.id)}
                 onChange={(updates) => updateElement(element.id, updates)}
+                onDragStart={() => handleDragStart(element)}
+                onDragEnd={handleDragEnd}
               />
             ))}
+
+            {/* Smart Guides */}
+            {showSmartGuides && (
+              <SmartGuides
+                elements={template.elements}
+                selectedElementId={selectedElementId}
+                draggedElement={draggedElement}
+                canvasWidth={width}
+                canvasHeight={height}
+                scale={zoom}
+              />
+            )}
           </Layer>
         </Stage>
       </div>
