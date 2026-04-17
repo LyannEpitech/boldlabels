@@ -8,11 +8,10 @@ import { AlignmentToolbar } from '../components/canvas/AlignmentToolbar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import TemplateGallery from '../components/TemplateGallery';
 import LivePreview from '../components/LivePreview';
-import type { Template } from '../types';
 
 export function EditorPage() {
   const { id } = useParams<{ id: string }>();
-  const { template, templates, loadTemplate, createTemplate } = useEditorStore();
+  const { template, templates, loadTemplate, currentTemplate, createTemplate } = useEditorStore();
   const [showGallery, setShowGallery] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 

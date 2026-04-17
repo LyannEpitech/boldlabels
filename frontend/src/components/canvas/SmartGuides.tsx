@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Line, Text } from 'react-konva';
-import type { TemplateElement } from '../../types';
+import { TemplateElement } from '../../types';
 
 interface SmartGuidesProps {
   elements: TemplateElement[];
