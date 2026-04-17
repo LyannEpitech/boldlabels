@@ -1,5 +1,7 @@
 # 🏷️ BoldLabels
 
+[![Tests](https://github.com/LyannEpitech/boldlabels/actions/workflows/test.yml/badge.svg)](https://github.com/LyannEpitech/boldlabels/actions/workflows/test.yml)
+
 Application web professionnelle pour générer des étiquettes imprimables à partir de données CSV.
 
 ## 🚀 Fonctionnalités
