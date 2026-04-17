@@ -11,13 +11,15 @@ function mmToPx(mm: number): number {
 }
 
 interface RectangleElementProps {
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
   element: TemplateElement;
   isSelected: boolean;
   onSelect: () => void;
   onChange: (updates: Partial<TemplateElement>) => void;
 }
 
-export function RectangleElement({ element, isSelected, onSelect, onChange }: RectangleElementProps) {
+export function RectangleElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: RectangleElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { snapToGrid, gridSize } = useEditorStore();
@@ -50,6 +52,7 @@ export function RectangleElement({ element, isSelected, onSelect, onChange }: Re
         draggable
         onClick={onSelect}
         onTap={onSelect}
+        onDragStart={onDragStart}
         onDragEnd={(e) => {
           let x = e.target.x() / MM_TO_PX;
           let y = e.target.y() / MM_TO_PX;
@@ -58,6 +61,7 @@ export function RectangleElement({ element, isSelected, onSelect, onChange }: Re
             y = Math.round(y / gridSize) * gridSize;
           }
           onChange({ x, y });
+          onDragEnd?.();
         }}
         onTransformEnd={(e) => {
           const node = e.target;
