@@ -27,8 +27,21 @@ interface GeneratePDFOptions {
 }
 
 // Helper: parse hex color to RGB array for jsPDF
+// Supports: #FFF, #FFFFFF, FFF, FFFFFF
 function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '');
+  let h = hex.replace('#', '');
+  
+  // Handle short hex (#FFF -> #FFFFFF)
+  if (h.length === 3) {
+    h = h.split('').map(c => c + c).join('');
+  }
+  
+  // Default to white if invalid
+  if (h.length !== 6 || !/^[0-9A-Fa-f]{6}$/.test(h)) {
+    console.warn(`[PDF Service] Invalid hex color: ${hex}, defaulting to white`);
+    return [255, 255, 255];
+  }
+  
   return [
     parseInt(h.substring(0, 2), 16),
     parseInt(h.substring(2, 4), 16),
@@ -36,27 +49,44 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
+// Valid barcode formats supported by bwip-js
+const VALID_BARCODE_FORMATS = [
+  'EAN13', 'EAN-13', 'EAN8', 'EAN-8',
+  'UPC-A', 'UPCA', 'UPC-E', 'UPCE',
+  'CODE128', 'CODE-128', 'CODE39', 'CODE-39',
+  'ITF14', 'ITF-14', 'CODE93', 'CODE-93',
+  'CODABAR', 'MSI', 'GS1', 'ISBN', 'ISMN', 'ISSN'
+];
+
+// Map format names to bwip-js bcid
+const BARCODE_FORMAT_MAP: Record<string, string> = {
+  'EAN13': 'ean13', 'EAN-13': 'ean13',
+  'EAN8': 'ean8', 'EAN-8': 'ean8',
+  'UPC-A': 'upca', 'UPCA': 'upca',
+  'UPC-E': 'upce', 'UPCE': 'upce',
+  'CODE128': 'code128', 'CODE-128': 'code128',
+  'CODE39': 'code39', 'CODE-39': 'code39',
+  'CODE93': 'code93', 'CODE-93': 'code93',
+  'ITF14': 'itf14', 'ITF-14': 'itf14',
+  'CODABAR': 'rationalizedCodabar',
+  'MSI': 'msi', 'GS1': 'gs1-128',
+  'ISBN': 'isbn', 'ISMN': 'ismn', 'ISSN': 'issn',
+};
+
 // Generate barcode as PNG buffer using bwip-js
-function generateBarcodePNG(value: string, format: string, width: number, height: number): Promise<Buffer> {
+async function generateBarcodePNG(value: string, format: string): Promise<Buffer> {
+  const upperFormat = format.toUpperCase();
+  
+  // Validate format
+  if (!VALID_BARCODE_FORMATS.includes(upperFormat)) {
+    const error = new Error(`Unsupported barcode format: ${format}. Supported: ${VALID_BARCODE_FORMATS.join(', ')}`);
+    console.error(`[PDF Service] Barcode format error: ${format}`);
+    throw error;
+  }
+  
+  const bcid = BARCODE_FORMAT_MAP[upperFormat] || 'code128';
+  
   return new Promise((resolve, reject) => {
-    // Map common format names to bwip-js types
-    const formatMap: Record<string, string> = {
-      'EAN13': 'ean13',
-      'EAN-13': 'ean13',
-      'EAN8': 'ean8',
-      'EAN-8': 'ean8',
-      'UPC-A': 'upca',
-      'UPCA': 'upca',
-      'CODE128': 'code128',
-      'CODE-128': 'code128',
-      'CODE39': 'code39',
-      'CODE-39': 'code39',
-      'ITF14': 'itf14',
-      'ITF-14': 'itf14',
-    };
-
-    const bcid = formatMap[format.toUpperCase()] || 'code128';
-
     bwipjs.toBuffer({
       bcid,
       text: value,
@@ -64,16 +94,24 @@ function generateBarcodePNG(value: string, format: string, width: number, height
       includetext: true,
       textxalign: 'center',
     }, (err: Error | null, png: Buffer) => {
-      if (err) reject(err);
-      else resolve(png);
+      if (err) {
+        console.error(`[PDF Service] Barcode generation failed: ${err.message}`);
+        reject(err);
+      } else {
+        resolve(png);
+      }
     });
   });
 }
 
 // Generate QR code as PNG buffer
-async function generateQRPNG(value: string, size: number): Promise<Buffer> {
+async function generateQRPNG(value: string, sizeMm: number): Promise<Buffer> {
+  // Convert mm to pixels at 300 DPI for print quality
+  // 1 inch = 25.4mm, 300 DPI → pixels = mm * 300 / 25.4
+  const pixels = Math.max(100, Math.round(sizeMm * 11.81));
+  
   return await QRCode.toBuffer(value, {
-    width: 300,
+    width: pixels,
     margin: 0,
     color: { dark: '#000000', light: '#FFFFFF' },
   });
@@ -213,16 +251,11 @@ export async function generateLabelPDF({
       } else if (element.type === 'barcode') {
         try {
           const barcodeFormat = props.format || 'CODE128';
-          const barcodePNG = await generateBarcodePNG(String(value), barcodeFormat, elWidth, elHeight);
-          const showText = props.showText !== false;
-
-          if (element.rotation) {
-            // Rotation: render to temp, add with rotation
-            doc.addImage(barcodePNG, 'PNG', elX, elY, elWidth, elHeight);
-          } else {
-            doc.addImage(barcodePNG, 'PNG', elX, elY, elWidth, elHeight);
-          }
-        } catch (e) {
+          const barcodePNG = await generateBarcodePNG(String(value), barcodeFormat);
+          
+          doc.addImage(barcodePNG, 'PNG', elX, elY, elWidth, elHeight);
+        } catch (e: any) {
+          console.warn(`[PDF Service] Barcode fallback for "${value}": ${e.message}`);
           // Fallback: draw text placeholder
           const lineColor = hexToRgb(props.lineColor || '#000000');
           const bgColor = hexToRgb(props.backgroundColor || '#FFFFFF');
@@ -241,7 +274,8 @@ export async function generateLabelPDF({
           const offsetX = elX + (elWidth - qrSize) / 2;
           const offsetY = elY + (elHeight - qrSize) / 2;
           doc.addImage(qrPNG, 'PNG', offsetX, offsetY, qrSize, qrSize);
-        } catch (e) {
+        } catch (e: any) {
+          console.warn(`[PDF Service] QR code fallback for "${value}": ${e.message}`);
           // Fallback
           doc.setDrawColor('#000000');
           doc.rect(elX, elY, elWidth, elHeight, 'S');
