@@ -11,11 +11,14 @@ const PT_TO_PX = 1.333;
 const createMockTemplate = (widthMm = 40, heightMm = 20) => ({
   id: 'test-template',
   name: 'Test Template',
+  description: null,
   width: widthMm,
   height: heightMm,
+  unit: 'mm',
   backgroundColor: '#FFFFFF',
   borderWidth: 1,
   borderColor: '#000000',
+  borderRadius: 0,
   createdAt: new Date(),
   updatedAt: new Date(),
   elements: [

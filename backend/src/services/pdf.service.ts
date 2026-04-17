@@ -93,10 +93,11 @@ async function generateBarcodePNG(value: string, format: string): Promise<Buffer
       scale: 3,
       includetext: true,
       textxalign: 'center',
-    }, (err: Error | null, png: Buffer) => {
+    }, (err: string | Error | null, png: Buffer) => {
       if (err) {
-        console.error(`[PDF Service] Barcode generation failed: ${err.message}`);
-        reject(err);
+        const errorMsg = typeof err === 'string' ? err : err.message;
+        console.error(`[PDF Service] Barcode generation failed: ${errorMsg}`);
+        reject(new Error(errorMsg));
       } else {
         resolve(png);
       }

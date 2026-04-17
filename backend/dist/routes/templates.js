@@ -84,7 +84,8 @@ export function createTemplateRoutes(prisma) {
     // PUT /api/templates/:id - Full update template (with elements)
     router.put('/:id', async (req, res) => {
         try {
-            const validated = TemplateSchema.parse(req.body);
+            // Use partial schema for updates - only validate fields that are provided
+            const validated = TemplateUpdateSchema.parse(req.body);
             const elements = req.body.elements || [];
             // Validate elements and convert properties to string
             const validatedElements = elements.map((el) => {
@@ -96,18 +97,20 @@ export function createTemplateRoutes(prisma) {
             });
             // Use transaction to update template and elements
             const template = await prisma.$transaction(async (tx) => {
-                // Delete existing elements
-                await tx.templateElement.deleteMany({
-                    where: { templateId: req.params.id },
-                });
+                // Delete existing elements if new elements are provided
+                if (req.body.elements !== undefined) {
+                    await tx.templateElement.deleteMany({
+                        where: { templateId: req.params.id },
+                    });
+                }
                 // Update template with new elements
                 return tx.template.update({
                     where: { id: req.params.id },
                     data: {
                         ...validated,
-                        elements: {
+                        elements: req.body.elements !== undefined ? {
                             create: validatedElements,
-                        },
+                        } : undefined,
                     },
                     include: { elements: true },
                 });
@@ -116,8 +119,10 @@ export function createTemplateRoutes(prisma) {
         }
         catch (error) {
             if (error instanceof Error && error.name === 'ZodError') {
-                return res.status(400).json({ error: 'Validation failed', details: error });
+                console.error('Zod validation error:', JSON.stringify(error, null, 2));
+                return res.status(400).json({ error: 'Validation failed', details: error.issues });
             }
+            console.error('Update template error:', error);
             res.status(500).json({ error: 'Failed to update template' });
         }
     });
