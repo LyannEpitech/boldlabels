@@ -1,4 +1,4 @@
-import type { Template } from '../types';
+import { Template } from '../types';
 
 export interface PresetTemplate {
   id: string;
