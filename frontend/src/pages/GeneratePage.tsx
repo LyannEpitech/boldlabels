@@ -241,7 +241,9 @@ export function GeneratePage() {
           // Draw elements
           const sortedElements = [...template.elements].sort((a, b) => a.zIndex - b.zIndex);
           for (const element of sortedElements) {
-            const props = JSON.parse(element.properties as string || '{}');
+            const props = typeof element.properties === 'string' 
+              ? JSON.parse(element.properties || '{}')
+              : (element.properties || {});
             const value = (() => {
               const colName = mapping[element.variableName];
               if (!colName) return `[${element.variableName}]`;
