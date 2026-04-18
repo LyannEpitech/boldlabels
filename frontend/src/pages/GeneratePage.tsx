@@ -197,20 +197,124 @@ export function GeneratePage() {
     });
   };
 
+  const exportMode = 'wysiwyg' as const;
+
   const generatePDF = async () => {
     if (!template || csvData.length === 0) return;
 
     setIsGenerating(true);
 
     try {
-      await pdfService.generateAndSavePDF(
-        template,
-        csvData,
-        csvHeaders,
-        mapping,
-        pdfOptions,
-        labelLayout
-      );
+      if (exportMode === 'wysiwyg') {
+        // WYSIWYG: export from frontend preview (pixel-perfect)
+        const { generatePDFFromImages, downloadPDF } = await import('../services/pdfExport');
+        const MM_TO_PX = 3.7795275591;
+        
+        // For each label, capture from PagePreview
+        // Use html2canvas approach or Konva stage export
+        const labelImages: { dataUrl: string; width: number; height: number }[] = [];
+        
+        // Create offscreen stages for each label
+        for (const row of csvData) {
+          // Create canvas element
+          const canvas = document.createElement('canvas');
+          const scale = 3; // 300 DPI-ish
+          canvas.width = template.width * MM_TO_PX * scale;
+          canvas.height = template.height * MM_TO_PX * scale;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) continue;
+          
+          // Scale for high DPI
+          ctx.scale(scale, scale);
+          
+          // Draw background
+          ctx.fillStyle = template.backgroundColor;
+          ctx.fillRect(0, 0, template.width * MM_TO_PX, template.height * MM_TO_PX);
+          
+          // Draw border
+          if (template.borderWidth > 0) {
+            ctx.strokeStyle = template.borderColor;
+            ctx.lineWidth = template.borderWidth * MM_TO_PX;
+            ctx.strokeRect(0, 0, template.width * MM_TO_PX, template.height * MM_TO_PX);
+          }
+          
+          // Draw elements
+          const sortedElements = [...template.elements].sort((a, b) => a.zIndex - b.zIndex);
+          for (const element of sortedElements) {
+            const props = JSON.parse(element.properties as string || '{}');
+            const value = (() => {
+              const colName = mapping[element.variableName];
+              if (!colName) return `[${element.variableName}]`;
+              const colIndex = csvHeaders.indexOf(colName);
+              if (colIndex === -1 || !row[colIndex]) return `[${element.variableName}]`;
+              return row[colIndex];
+            })();
+            
+            const ex = element.x * MM_TO_PX;
+            const ey = element.y * MM_TO_PX;
+            const ew = element.width * MM_TO_PX;
+            const eh = element.height * MM_TO_PX;
+            
+            if (element.type === 'text') {
+              ctx.fillStyle = props.color || '#000000';
+              const fontStyle = props.fontWeight === 'bold' ? 'bold ' : '';
+              ctx.font = `${fontStyle}${(props.fontSize || 12) * MM_TO_PX / 2.5}px ${props.fontFamily || 'Arial'}`;
+              ctx.textAlign = (props.align || 'left') as CanvasTextAlign;
+              ctx.textBaseline = 'middle';
+              
+              const textX = props.align === 'center' ? ex + ew / 2 : 
+                            props.align === 'right' ? ex + ew : ex;
+              ctx.fillText(value + (props.suffix || ''), textX, ey + eh / 2, ew);
+            } else if (element.type === 'barcode') {
+              // Draw barcode placeholder
+              ctx.fillStyle = '#000';
+              const barWidth = 1.5;
+              const totalBars = Math.floor(ew / (barWidth * 2));
+              for (let i = 0; i < totalBars; i++) {
+                if (i % 3 !== 2) { // Skip every 3rd bar for visual effect
+                  ctx.fillRect(ex + i * barWidth * 2, ey, barWidth, eh * 0.7);
+                }
+              }
+              // Draw text below
+              ctx.fillStyle = '#000';
+              ctx.font = `8px monospace`;
+              ctx.textAlign = 'center';
+              ctx.fillText(value, ex + ew / 2, ey + eh * 0.85);
+            } else if (element.type === 'qrcode') {
+              // Draw QR placeholder
+              const qrSize = Math.min(ew, eh);
+              const cellSize = qrSize / 15;
+              for (let r = 0; r < 15; r++) {
+                for (let c = 0; c < 15; c++) {
+                  if ((r + c) % 3 === 0 || (r < 5 && c < 5) || (r < 5 && c > 9)) {
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(ex + c * cellSize, ey + r * cellSize, cellSize, cellSize);
+                  }
+                }
+              }
+            }
+          }
+          
+          labelImages.push({
+            dataUrl: canvas.toDataURL('image/png'),
+            width: template.width,
+            height: template.height,
+          });
+        }
+        
+        const doc = generatePDFFromImages(labelImages, template, pdfOptions, labelLayout);
+        downloadPDF(doc, `${template.name || 'labels'}.pdf`);
+      } else {
+        // Backend generation (original)
+        await pdfService.generateAndSavePDF(
+          template,
+          csvData,
+          csvHeaders,
+          mapping,
+          pdfOptions,
+          labelLayout
+        );
+      }
     } catch (error) {
       console.error('PDF generation failed:', error);
       alert('Erreur lors de la génération du PDF');
