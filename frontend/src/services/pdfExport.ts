@@ -20,7 +20,7 @@ interface LabelImage {
  */
 export function captureStageAsImage(stage: any): string {
   return stage.toDataURL({
-    pixelRatio: 2, // 2x for print quality
+    pixelRatio: 3, // 3x for high quality (~288 DPI)
     mimeType: 'image/png',
   });
 }

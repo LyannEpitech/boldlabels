@@ -46,7 +46,7 @@ export function PDFExporter({
       if (!stage) continue;
 
       const dataUrl = stage.toDataURL({
-        pixelRatio: 300 / 96, // 300 DPI quality
+        pixelRatio: 3, // 3x for high quality
         mimeType: 'image/png',
       });
 
