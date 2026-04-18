@@ -10,7 +10,7 @@ import { EANDebugger } from '../components/EANDebugger';
 import { ArrowLeft, Download, FileText, Upload } from 'lucide-react';
 import { pdfService, dbService } from '../services/dbService';
 import { PagePreview } from '../components/PagePreview';
-import { LayoutPresetManager } from '../components/LayoutPresetManager';
+// import { LayoutPresetManager } from '../components/LayoutPresetManager';
 import { validateAllEANs, type EANValidationResult } from '../utils/eanValidator';
 import Papa from 'papaparse';
 import type { PDFOptions, LabelLayout } from '../types';
@@ -50,7 +50,7 @@ export function GeneratePage() {
     }
   }, [id, template, loadTemplate]);
 
-  // Load session data from API (replaces localStorage)
+  // Load session data from API
   useEffect(() => {
     if (!id) return;
     
@@ -59,7 +59,6 @@ export function GeneratePage() {
         const sessionData = await dbService.getSessionData(id);
         
         if (sessionData) {
-          // Load CSV data
           if (sessionData.csvHeaders && sessionData.csvRows) {
             setCsvHeaders(sessionData.csvHeaders);
             setCsvData(sessionData.csvRows);
@@ -67,7 +66,6 @@ export function GeneratePage() {
             setShowUploadModal(true);
           }
           
-          // Load PDF options
           if (sessionData.pageSize) {
             setPdfOptions({
               pageSize: sessionData.pageSize,
@@ -81,7 +79,6 @@ export function GeneratePage() {
             });
           }
           
-          // Load label layout
           if (sessionData.labelsPerRow) {
             setLabelLayout({
               labelsPerRow: sessionData.labelsPerRow,
@@ -103,7 +100,6 @@ export function GeneratePage() {
     
     loadSessionData();
 
-    // Load mapping from Zustand store
     if (mappingId) {
       const foundMapping = savedMappings.find((m) => m.id === mappingId);
       if (foundMapping) {
@@ -112,15 +108,12 @@ export function GeneratePage() {
           mappingRecord[cm.variableName] = cm.columnName;
         });
         setMapping(mappingRecord);
-        console.log('Loaded mapping from store:', mappingRecord);
       }
     }
   }, [id, mappingId, savedMappings]);
 
-  // Auto-calculation flag
   const [isAutoCalculated, setIsAutoCalculated] = useState(false);
 
-  // Save session data to API when settings change (debounced)
   useEffect(() => {
     if (!id) return;
     
@@ -140,13 +133,11 @@ export function GeneratePage() {
         verticalSpacing: labelLayout.verticalSpacing,
         selectedMappingId: mappingId,
       }).catch(console.error);
-    }, 500); // Debounce 500ms
+    }, 500);
     
     return () => clearTimeout(timeout);
   }, [pdfOptions, labelLayout, id]);
 
-  // Auto-calculate layout based on template size (only on initial load if no saved settings)
-  
   useEffect(() => {
     if (!template || isAutoCalculated) return;
 
@@ -190,8 +181,6 @@ export function GeneratePage() {
           setCsvHeaders(headers);
           setCsvData(rows);
           setShowUploadModal(false);
-          
-          // Session data will be saved by the useEffect
         }
       },
     });
@@ -203,6 +192,7 @@ export function GeneratePage() {
     setIsGenerating(true);
 
     try {
+      // Backend generation for now - WYSIWYG export needs more work
       await pdfService.generateAndSavePDF(
         template,
         csvData,
@@ -222,7 +212,6 @@ export function GeneratePage() {
   const handleGeneratePDF = async () => {
     if (!template || csvData.length === 0) return;
 
-    // Valider tous les codes EAN
     const results = validateAllEANs(csvData, csvHeaders, template, mapping);
     setEanResults(results);
 
@@ -232,7 +221,6 @@ export function GeneratePage() {
       return;
     }
 
-    // Si tout est valide, générer directement
     await generatePDF();
   };
 
@@ -264,7 +252,6 @@ export function GeneratePage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Options Panel */}
             <div className="lg:col-span-2 space-y-6">
               <Card>
                 <CardHeader>
@@ -345,26 +332,6 @@ export function GeneratePage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Presets</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {id && (
-                    <LayoutPresetManager
-                      templateId={id}
-                      pdfOptions={pdfOptions}
-                      labelLayout={labelLayout}
-                      onLoadPreset={(newPdfOptions, newLabelLayout) => {
-                        setPdfOptions(newPdfOptions);
-                        setLabelLayout(newLabelLayout);
-                        setIsAutoCalculated(true);
-                      }}
-                    />
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle>Disposition des étiquettes</CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -420,26 +387,8 @@ export function GeneratePage() {
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Données</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{csvData.length} lignes importées</p>
-                      <p className="text-sm text-gray-500">{csvHeaders.length} colonnes</p>
-                    </div>
-                    <Button variant="secondary" onClick={() => setShowUploadModal(true)} leftIcon={<Upload size={16} />}>
-                      Changer le fichier
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
-            {/* Preview & Actions */}
             <div className="space-y-6">
               <Card>
                 <CardHeader>
@@ -456,21 +405,10 @@ export function GeneratePage() {
                       labelLayout={labelLayout}
                     />
                   ) : (
-                    <div
-                      className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300"
-                      style={{
-                        aspectRatio: pdfOptions.orientation === 'portrait' ? 210 / 297 : 297 / 210,
-                      }}
-                    >
-                      <div className="w-full h-full flex flex-col items-center justify-center text-center">
-                        <FileText size={32} className="text-gray-400 mb-2" />
-                        <p className="text-sm font-medium">{csvData.length} étiquettes</p>
-                        <p className="text-xs text-gray-500">
-                          {labelLayout.labelsPerRow}×{labelLayout.labelsPerColumn} par page
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {Math.ceil(csvData.length / labelLayout.labelsPerPage)} pages
-                        </p>
+                    <div className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300">
+                      <div className="text-center text-gray-500">
+                        <FileText size={32} className="mx-auto mb-2" />
+                        <p className="text-sm">Aperçu non disponible</p>
                       </div>
                     </div>
                   )}
@@ -492,21 +430,11 @@ export function GeneratePage() {
         )}
       </div>
 
-      <Modal
-        isOpen={showUploadModal}
-        onClose={() => csvData.length > 0 && setShowUploadModal(false)}
-        title="Importer un fichier CSV"
-      >
+      <Modal isOpen={showUploadModal} onClose={() => csvData.length > 0 && setShowUploadModal(false)} title="Importer un fichier CSV">
         <div className="text-center py-8">
           <Upload size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 mb-4">Sélectionnez un fichier CSV contenant vos données</p>
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileUpload}
-            className="hidden"
-            id="csv-upload"
-          />
+          <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" id="csv-upload" />
           <label htmlFor="csv-upload" className="cursor-pointer">
             <span className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               <Upload size={16} />
