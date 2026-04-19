@@ -8,6 +8,7 @@ import { QRCodeElement } from './elements/QRCodeElement';
 import { ImageElement } from './elements/ImageElement';
 import { RectangleElement } from './elements/RectangleElement';
 import SmartGuides from './SmartGuides';
+import SelectionBox from './SelectionBox';
 import type { TemplateElement } from '../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -19,7 +20,7 @@ function mmToPx(mm: number): number {
 interface CanvasElementProps {
   element: TemplateElement;
   isSelected: boolean;
-  onSelect: () => void;
+  onSelect: (e?: Konva.KonvaEventObject<MouseEvent>) => void;
   onChange: (updates: Partial<TemplateElement>) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
@@ -56,8 +57,21 @@ interface LabelCanvasProps {
 }
 
 export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
-  const { template, selectedElementId, selectElement, updateElement, zoom, showGrid } = useEditorStore();
+  const store = useEditorStore();
+  const { 
+    template, 
+    selectedElementId, 
+    selectedElementIds,
+    selectElement, 
+    toggleElementSelection,
+    updateElement, 
+    zoom, 
+    showGrid 
+  } = store;
   const [draggedElement, setDraggedElement] = useState<TemplateElement | null>(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
+  const [selectionCurrent, setSelectionCurrent] = useState({ x: 0, y: 0 });
   
   if (!template) {
     return (
@@ -102,11 +116,58 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   
   const sortedElements = [...template.elements].sort((a, b) => a.zIndex - b.zIndex);
   
+  const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (e.target !== e.target.getStage()) return;
+    
+    const pos = e.target.getStage()?.getPointerPosition();
+    if (!pos) return;
+    
+    setIsSelecting(true);
+    setSelectionStart(pos);
+    setSelectionCurrent(pos);
+  };
+
+  const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (!isSelecting) return;
+    
+    const pos = e.target.getStage()?.getPointerPosition();
+    if (!pos) return;
+    
+    setSelectionCurrent(pos);
+  };
+
+  const handleStageMouseUp = () => {
+    if (!isSelecting) return;
+    
+    const boxWidth = Math.abs(selectionCurrent.x - selectionStart.x);
+    const boxHeight = Math.abs(selectionCurrent.y - selectionStart.y);
+    
+    // Only trigger if selection is significant
+    if (boxWidth > 5 && boxHeight > 5) {
+      store.endSelectionBox();
+    }
+    
+    setIsSelecting(false);
+  };
+
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (e.target === e.target.getStage()) {
-      selectElement(null);
+    if (e.target === e.target.getStage() && !isSelecting) {
+      const isCtrlPressed = e.evt.ctrlKey || e.evt.metaKey;
+      if (!isCtrlPressed) {
+        selectElement(null);
+      }
     }
   };
+
+  const handleElementSelect = (elementId: string, isCtrlPressed: boolean) => {
+    if (isCtrlPressed) {
+      toggleElementSelection(elementId);
+    } else {
+      selectElement(elementId);
+    }
+  };
+
+  // Note: handleSelectionEnd logic moved to store (endSelectionBox) for single source of truth
 
   const handleDragStart = (element: TemplateElement) => {
     setDraggedElement(element);
@@ -125,7 +186,15 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
           transformOrigin: 'center center',
         }}
       >
-        <Stage width={width} height={height} onClick={handleStageClick}>
+        <Stage 
+          width={width} 
+          height={height} 
+          onClick={handleStageClick}
+          onMouseDown={handleStageMouseDown}
+          onMouseMove={handleStageMouseMove}
+          onMouseUp={handleStageMouseUp}
+          onMouseLeave={handleStageMouseUp}
+        >
           <Layer>
             {labelBorder}
             {gridLines}
@@ -135,13 +204,24 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
               <CanvasElement
                 key={element.id}
                 element={element}
-                isSelected={selectedElementId === element.id}
-                onSelect={() => selectElement(element.id)}
+                isSelected={selectedElementIds.includes(element.id) || selectedElementId === element.id}
+                onSelect={(e) => {
+                  const isCtrlPressed = e?.evt?.ctrlKey || e?.evt?.metaKey || false;
+                  handleElementSelect(element.id, isCtrlPressed);
+                }}
                 onChange={(updates) => updateElement(element.id, updates)}
                 onDragStart={() => handleDragStart(element)}
                 onDragEnd={handleDragEnd}
               />
             ))}
+
+            {/* Rubber Band Selection Box */}
+            <SelectionBox
+              isSelecting={isSelecting}
+              startPos={selectionStart}
+              currentPos={selectionCurrent}
+              scale={zoom}
+            />
 
             {/* Smart Guides */}
             {showSmartGuides && (

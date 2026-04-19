@@ -7,8 +7,13 @@ interface EditorState {
   template: Template | null;
   templates: Template[];
   
-  // Sélection
+  // Sélection (multi-sélection support)
   selectedElementId: string | null;
+  selectedElementIds: string[];
+  
+  // Rubber band selection
+  selectionBox: { x: number; y: number; width: number; height: number } | null;
+  isSelecting: boolean;
   
   // Canvas
   zoom: number;
@@ -37,9 +42,26 @@ interface EditorActions {
   // Éléments
   addElement: (element: Omit<TemplateElement, 'id' | 'zIndex'>) => void;
   updateElement: (id: string, updates: Partial<TemplateElement>) => void;
+  updateMultipleElements: (ids: string[], updates: Partial<TemplateElement>) => void;
   removeElement: (id: string) => void;
+  removeMultipleElements: (ids: string[]) => void;
   selectElement: (id: string | null) => void;
+  toggleElementSelection: (id: string) => void;
+  selectMultipleElements: (ids: string[]) => void;
+  clearSelection: () => void;
   reorderElements: (elementIds: string[]) => void;
+  
+  // Rubber band selection
+  startSelectionBox: (x: number, y: number) => void;
+  updateSelectionBox: (width: number, height: number) => void;
+  endSelectionBox: () => string[];
+  
+  // Copy/Paste
+  copiedElements: TemplateElement[];
+  copyElements: (ids: string[]) => void;
+  pasteElements: () => void;
+  duplicateElement: (id: string) => void;
+  duplicateMultipleElements: (ids: string[]) => void;
   
   // Canvas
   setZoom: (zoom: number) => void;
@@ -65,6 +87,10 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     template: null,
     templates: [],
     selectedElementId: null,
+    selectedElementIds: [],
+    selectionBox: null,
+    isSelecting: false,
+    copiedElements: [],
     zoom: 1,
     showGrid: true,
     snapToGrid: false,
@@ -304,7 +330,227 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       }
     },
     
-    selectElement: (id) => set({ selectedElementId: id }),
+    selectElement: (id) => set({ selectedElementId: id, selectedElementIds: id ? [id] : [] }),
+    
+    toggleElementSelection: (id) => {
+      const { selectedElementIds } = get();
+      const index = selectedElementIds.indexOf(id);
+      let newSelection: string[];
+      
+      if (index === -1) {
+        newSelection = [...selectedElementIds, id];
+      } else {
+        newSelection = selectedElementIds.filter((_, i) => i !== index);
+      }
+      
+      set({
+        selectedElementIds: newSelection,
+        selectedElementId: newSelection.length > 0 ? newSelection[newSelection.length - 1] : null,
+      });
+    },
+    
+    selectMultipleElements: (ids) => set({
+      selectedElementIds: ids,
+      selectedElementId: ids.length > 0 ? ids[ids.length - 1] : null,
+    }),
+    
+    clearSelection: () => set({ selectedElementId: null, selectedElementIds: [] }),
+    
+    updateMultipleElements: async (ids, updates) => {
+      const { template } = get();
+      if (!template) return;
+      
+      const updated: Template = {
+        ...template,
+        elements: template.elements.map((el) =>
+          ids.includes(el.id) ? { ...el, ...updates } : el
+        ),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({ template: updated });
+      
+      try {
+        await dbService.updateTemplate(template.id, { elements: updated.elements });
+      } catch (error) {
+        console.error('[Store] Failed to save multiple element updates:', error);
+        set({ template });
+      }
+    },
+    
+    removeMultipleElements: async (ids) => {
+      const { template } = get();
+      if (!template) return;
+      
+      get().saveToHistory();
+      
+      const updated: Template = {
+        ...template,
+        elements: template.elements.filter((el) => !ids.includes(el.id)),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementId: null,
+        selectedElementIds: [],
+      });
+      
+      try {
+        await dbService.updateTemplate(template.id, { elements: updated.elements });
+      } catch (error) {
+        console.error('[Store] Failed to save element removal:', error);
+        set({ template });
+      }
+    },
+    
+    // Rubber band selection
+    startSelectionBox: (x, y) => set({
+      selectionBox: { x, y, width: 0, height: 0 },
+      isSelecting: true,
+    }),
+    
+    updateSelectionBox: (width, height) => set((state) => ({
+      selectionBox: state.selectionBox ? { ...state.selectionBox, width, height } : null,
+    })),
+    
+    endSelectionBox: () => {
+      const { selectionBox, template } = get();
+      if (!selectionBox || !template) {
+        set({ selectionBox: null, isSelecting: false });
+        return [];
+      }
+      
+      // Convert mm to px for comparison with selection box (which is in px)
+      const MM_TO_PX = 3.7795275591;
+      
+      const selectedIds = template.elements.filter((el) => {
+        const elLeft = el.x * MM_TO_PX;
+        const elTop = el.y * MM_TO_PX;
+        const elRight = elLeft + el.width * MM_TO_PX;
+        const elBottom = elTop + el.height * MM_TO_PX;
+        const boxRight = selectionBox.x + selectionBox.width;
+        const boxBottom = selectionBox.y + selectionBox.height;
+        
+        return (
+          elLeft < boxRight &&
+          elRight > selectionBox.x &&
+          elTop < boxBottom &&
+          elBottom > selectionBox.y
+        );
+      }).map((el) => el.id);
+      
+      set({
+        selectionBox: null,
+        isSelecting: false,
+        selectedElementIds: selectedIds,
+        selectedElementId: selectedIds.length > 0 ? selectedIds[selectedIds.length - 1] : null,
+      });
+      
+      return selectedIds;
+    },
+    
+    // Copy/Paste
+    copyElements: (ids) => {
+      const { template } = get();
+      if (!template) return;
+      
+      const elementsToCopy = template.elements.filter((el) => ids.includes(el.id));
+      set({ copiedElements: elementsToCopy });
+    },
+    
+    pasteElements: () => {
+      const { template, copiedElements } = get();
+      if (!template || copiedElements.length === 0) return;
+      
+      get().saveToHistory();
+      
+      const newElements: TemplateElement[] = copiedElements.map((el) => ({
+        ...el,
+        id: crypto.randomUUID(),
+        x: el.x + 5,
+        y: el.y + 5,
+      }));
+      
+      const updated: Template = {
+        ...template,
+        elements: [...template.elements, ...newElements],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementIds: newElements.map((el) => el.id),
+        selectedElementId: newElements[newElements.length - 1].id,
+      });
+      
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .catch(console.error);
+    },
+    
+    duplicateElement: (id) => {
+      const { template } = get();
+      if (!template) return;
+      
+      const element = template.elements.find((el) => el.id === id);
+      if (!element) return;
+      
+      get().saveToHistory();
+      
+      const newElement: TemplateElement = {
+        ...element,
+        id: crypto.randomUUID(),
+        x: element.x + 5,
+        y: element.y + 5,
+        zIndex: template.elements.length,
+      };
+      
+      const updated: Template = {
+        ...template,
+        elements: [...template.elements, newElement],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementId: newElement.id,
+        selectedElementIds: [newElement.id],
+      });
+      
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .catch(console.error);
+    },
+    
+    duplicateMultipleElements: (ids) => {
+      const { template } = get();
+      if (!template) return;
+      
+      get().saveToHistory();
+      
+      const elementsToDuplicate = template.elements.filter((el) => ids.includes(el.id));
+      const newElements: TemplateElement[] = elementsToDuplicate.map((el) => ({
+        ...el,
+        id: crypto.randomUUID(),
+        x: el.x + 5,
+        y: el.y + 5,
+        zIndex: template.elements.length,
+      }));
+      
+      const updated: Template = {
+        ...template,
+        elements: [...template.elements, ...newElements],
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({
+        template: updated,
+        selectedElementIds: newElements.map((el) => el.id),
+        selectedElementId: newElements[newElements.length - 1].id,
+      });
+      
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .catch(console.error);
+    },
     
     reorderElements: (elementIds) => {
       const { template } = get();

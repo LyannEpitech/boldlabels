@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* CSS Variables for non-Tailwind components */
+:root {
+  --color-brand: #6366F1;
+  --color-brand-hover: #4F46E5;
+  --color-brand-light: #EEF2FF;
+  
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F8FAFC;
+  --color-surface-sunken: #F1F5F9;
+  
+  --color-text: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+  
+  --color-border: #E2E8F0;
+  --color-border-hover: #CBD5E1;
+  
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-glow: 0 0 20px rgba(99,102,241,0.15);
+}
+
+/* Elegant scrollbar */
+::-webkit-scrollbar { 
+  width: 6px; 
+  height: 6px; 
+}
+::-webkit-scrollbar-track { 
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb { 
+  background: #CBD5E1; 
+  border-radius: 3px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: #94A3B8; 
+}
+
+/* Smooth transitions */
+* { 
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform; 
+  transition-duration: 150ms; 
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus visible for accessibility */
+:focus-visible { 
+  outline: 2px solid var(--color-brand); 
+  outline-offset: 2px; 
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--color-brand-light);
+  color: var(--color-brand);
+}
