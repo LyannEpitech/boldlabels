@@ -57,17 +57,17 @@ interface LabelCanvasProps {
 }
 
 export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
+  const store = useEditorStore();
   const { 
     template, 
     selectedElementId, 
     selectedElementIds,
     selectElement, 
-    selectMultipleElements,
     toggleElementSelection,
     updateElement, 
     zoom, 
     showGrid 
-  } = useEditorStore();
+  } = store;
   const [draggedElement, setDraggedElement] = useState<TemplateElement | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
@@ -139,14 +139,12 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const handleStageMouseUp = () => {
     if (!isSelecting) return;
     
-    const boxX = Math.min(selectionStart.x, selectionCurrent.x);
-    const boxY = Math.min(selectionStart.y, selectionCurrent.y);
     const boxWidth = Math.abs(selectionCurrent.x - selectionStart.x);
     const boxHeight = Math.abs(selectionCurrent.y - selectionStart.y);
     
     // Only trigger if selection is significant
     if (boxWidth > 5 && boxHeight > 5) {
-      handleSelectionEnd({ x: boxX, y: boxY, width: boxWidth, height: boxHeight });
+      store.endSelectionBox();
     }
     
     setIsSelecting(false);
@@ -169,31 +167,7 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
     }
   };
 
-  const handleSelectionEnd = (box: { x: number; y: number; width: number; height: number }) => {
-    if (!template) return;
-    
-    // Find all elements intersecting with the selection box
-    const selectedIds = template.elements.filter((el) => {
-      const elRight = el.x * MM_TO_PX + el.width * MM_TO_PX;
-      const elBottom = el.y * MM_TO_PX + el.height * MM_TO_PX;
-      const boxRight = box.x + box.width;
-      const boxBottom = box.y + box.height;
-      const elLeft = el.x * MM_TO_PX;
-      const elTop = el.y * MM_TO_PX;
-      
-      return (
-        elLeft < boxRight &&
-        elRight > box.x &&
-        elTop < boxBottom &&
-        elBottom > box.y
-      );
-    }).map((el) => el.id);
-    
-    if (selectedIds.length > 0) {
-      selectMultipleElements(selectedIds);
-    }
-    setIsSelecting(false);
-  };
+  // Note: handleSelectionEnd logic moved to store (endSelectionBox) for single source of truth
 
   const handleDragStart = (element: TemplateElement) => {
     setDraggedElement(element);

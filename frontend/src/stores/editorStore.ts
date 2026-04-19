@@ -421,16 +421,21 @@ export const useEditorStore = create<EditorState & EditorActions>()(
         return [];
       }
       
+      // Convert mm to px for comparison with selection box (which is in px)
+      const MM_TO_PX = 3.7795275591;
+      
       const selectedIds = template.elements.filter((el) => {
-        const elRight = el.x + el.width;
-        const elBottom = el.y + el.height;
+        const elLeft = el.x * MM_TO_PX;
+        const elTop = el.y * MM_TO_PX;
+        const elRight = elLeft + el.width * MM_TO_PX;
+        const elBottom = elTop + el.height * MM_TO_PX;
         const boxRight = selectionBox.x + selectionBox.width;
         const boxBottom = selectionBox.y + selectionBox.height;
         
         return (
-          el.x < boxRight &&
+          elLeft < boxRight &&
           elRight > selectionBox.x &&
-          el.y < boxBottom &&
+          elTop < boxBottom &&
           elBottom > selectionBox.y
         );
       }).map((el) => el.id);
