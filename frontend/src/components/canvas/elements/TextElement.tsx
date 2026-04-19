@@ -16,10 +16,11 @@ interface TextElementProps {
   onSelect: () => void;
   onChange: (updates: Partial<TemplateElement>) => void;
   onDragStart?: () => void;
+  onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd?: () => void;
 }
 
-export function TextElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: TextElementProps) {
+export function TextElement({ element, isSelected, onSelect, onChange, onDragStart, onDragMove, onDragEnd }: TextElementProps) {
   const shapeRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const props = element.properties as TextProperties;
@@ -67,6 +68,7 @@ export function TextElement({ element, isSelected, onSelect, onChange, onDragSta
         onClick={onSelect}
         onTap={onSelect}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={(e) => {
           let x = e.target.x() / MM_TO_PX;
           let y = e.target.y() / MM_TO_PX;

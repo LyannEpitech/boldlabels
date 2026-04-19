@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer, Rect, Text } from 'react-konva';
 import Konva from 'konva';
 import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
@@ -23,16 +23,18 @@ interface CanvasElementProps {
   onSelect: (e?: Konva.KonvaEventObject<MouseEvent>) => void;
   onChange: (updates: Partial<TemplateElement>) => void;
   onDragStart?: () => void;
+  onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd?: () => void;
 }
 
-function CanvasElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: CanvasElementProps) {
+function CanvasElement({ element, isSelected, onSelect, onChange, onDragStart, onDragMove, onDragEnd }: CanvasElementProps) {
   const commonProps = {
     element,
     isSelected,
     onSelect,
     onChange,
     onDragStart,
+    onDragMove,
     onDragEnd
   };
 
@@ -72,6 +74,7 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
   const [selectionCurrent, setSelectionCurrent] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   
   if (!template) {
     return (
@@ -171,10 +174,21 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
 
   const handleDragStart = (element: TemplateElement) => {
     setDraggedElement(element);
+    setDragPosition({ x: element.x, y: element.y });
+  };
+
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!draggedElement) return;
+    const pos = e.target.position();
+    setDragPosition({
+      x: Math.round((pos.x / MM_TO_PX) * 10) / 10,
+      y: Math.round((pos.y / MM_TO_PX) * 10) / 10,
+    });
   };
 
   const handleDragEnd = () => {
     setDraggedElement(null);
+    setDragPosition(null);
   };
   
   return (
@@ -211,9 +225,24 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
                 }}
                 onChange={(updates) => updateElement(element.id, updates)}
                 onDragStart={() => handleDragStart(element)}
+                onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
               />
             ))}
+
+            {/* Position Indicator during drag */}
+            {dragPosition && draggedElement && (
+              <Text
+                x={draggedElement.x * MM_TO_PX}
+                y={draggedElement.y * MM_TO_PX - 20}
+                text={`X: ${dragPosition.x}mm  Y: ${dragPosition.y}mm`}
+                fontSize={10}
+                fill="#6366F1"
+                fontFamily="monospace"
+                padding={4}
+                background="#EEF2FF"
+              />
+            )}
 
             {/* Rubber Band Selection Box */}
             <SelectionBox

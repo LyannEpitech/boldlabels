@@ -17,10 +17,11 @@ interface BarcodeElementProps {
   onSelect: () => void;
   onChange: (updates: Partial<TemplateElement>) => void;
   onDragStart?: () => void;
+  onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd?: () => void;
 }
 
-export function BarcodeElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: BarcodeElementProps) {
+export function BarcodeElement({ element, isSelected, onSelect, onChange, onDragStart, onDragMove, onDragEnd }: BarcodeElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { snapToGrid, gridSize } = useEditorStore();
@@ -98,6 +99,7 @@ export function BarcodeElement({ element, isSelected, onSelect, onChange, onDrag
         onClick={onSelect}
         onTap={onSelect}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={(e) => {
           let x = e.target.x() / MM_TO_PX;
           let y = e.target.y() / MM_TO_PX;
