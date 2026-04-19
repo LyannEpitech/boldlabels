@@ -9,6 +9,7 @@ import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import TemplateGallery from '../components/TemplateGallery';
 import LivePreview from '../components/LivePreview';
 import { PositionIndicator } from '../components/canvas/PositionIndicator';
+import { Ruler } from '../components/canvas/Ruler';
 import type { Template } from '../types';
 
 export function EditorPage() {
@@ -18,6 +19,7 @@ export function EditorPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [showPosition, setShowPosition] = useState(false);
+  const [guides, setGuides] = useState<{ position: number; orientation: 'horizontal' | 'vertical' }[]>([]);
 
   // Enable keyboard shortcuts
   useKeyboardShortcuts();
@@ -113,8 +115,20 @@ export function EditorPage() {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className={`flex-1 transition-all ${showPreview ? 'mr-96' : ''} relative`}>
-            <LabelCanvas showSmartGuides />
+          <div className={`flex-1 transition-all ${showPreview ? 'mr-96' : ''} relative flex flex-col`}>
+            {/* Rulers */}
+            {template && (
+              <Ruler
+                width={template.width}
+                height={template.height}
+                scale={1}
+                onGuideAdd={(guide) => setGuides([...guides, guide])}
+              />
+            )}
+            
+            <div className="flex-1 flex items-center justify-center overflow-auto p-8">
+              <LabelCanvas showSmartGuides />
+            </div>
             
             {/* Position Indicator */}
             <PositionIndicator
