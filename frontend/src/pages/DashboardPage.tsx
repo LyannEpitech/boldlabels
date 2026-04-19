@@ -38,6 +38,16 @@ export function DashboardPage() {
     const width = preset ? preset.width : customWidth;
     const height = preset ? preset.height : customHeight;
 
+    // Validation des dimensions
+    if (width <= 0 || height <= 0) {
+      alert('Les dimensions doivent être positives');
+      return;
+    }
+    if (width > 500 || height > 500) {
+      alert('Les dimensions ne peuvent pas dépasser 500mm');
+      return;
+    }
+
     await createTemplate({
       name: newTemplateName || 'Nouveau template',
       description: '',

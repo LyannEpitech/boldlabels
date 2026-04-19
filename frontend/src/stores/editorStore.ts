@@ -323,6 +323,11 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       const { template } = get();
       if (!template) return;
       
+      // Confirmation dialog for deletion
+      if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
+        return;
+      }
+      
       get().saveToHistory();
       
       const updated: Template = {
@@ -396,7 +401,16 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     
     removeMultipleElements: async (ids) => {
       const { template } = get();
-      if (!template) return;
+      if (!template || ids.length === 0) return;
+      
+      // Confirmation dialog for multiple deletion
+      const confirmMessage = ids.length === 1 
+        ? 'Êtes-vous sûr de vouloir supprimer cet élément ?'
+        : `Êtes-vous sûr de vouloir supprimer ces ${ids.length} éléments ?`;
+      
+      if (!confirm(confirmMessage)) {
+        return;
+      }
       
       get().saveToHistory();
       
