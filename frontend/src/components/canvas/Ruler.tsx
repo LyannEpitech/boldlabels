@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Stage, Layer, Line, Text, Rect } from 'react-konva';
+import React, { useState, useCallback } from 'react';
+import { Stage, Layer, Text, Rect } from 'react-konva';
 import type { KonvaEventObject } from 'konva/lib/Node';
 
 interface RulerProps {
@@ -7,8 +7,9 @@ interface RulerProps {
   height: number;
   scale: number;
   onGuideAdd?: (guide: { position: number; orientation: 'horizontal' | 'vertical' }) => void;
-  onGuideRemove?: (index: number) => void;
-  guides?: { position: number; orientation: 'horizontal' | 'vertical' }[];
+  // TODO: Implement guide removal and display
+  // onGuideRemove?: (index: number) => void;
+  // guides?: { position: number; orientation: 'horizontal' | 'vertical' }[];
 }
 
 const RULER_SIZE = 30; // pixels
@@ -19,8 +20,6 @@ export const Ruler: React.FC<RulerProps> = ({
   height,
   scale,
   onGuideAdd,
-  onGuideRemove,
-  guides = [],
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOrientation, setDragOrientation] = useState<'horizontal' | 'vertical' | null>(null);
@@ -75,7 +74,7 @@ export const Ruler: React.FC<RulerProps> = ({
   }, [isDragging, dragOrientation, dragPosition, scale, width, height, onGuideAdd]);
 
   // Generate ruler marks
-  const generateMarks = (size: number, isHorizontal: boolean) => {
+  const generateMarks = (_size: number, isHorizontal: boolean) => {
     const marks: { x: number; y: number; width: number; height: number; label?: string }[] = [];
     const totalMm = isHorizontal ? width : height;
     
