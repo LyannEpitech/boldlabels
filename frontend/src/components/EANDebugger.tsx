@@ -43,7 +43,7 @@ export function EANDebugger({ isOpen, onClose, onContinue, results }: EANDebugge
                   ? `${invalidCount} code${invalidCount > 1 ? 's' : ''} invalide${invalidCount > 1 ? 's' : ''} détecté${invalidCount > 1 ? 's' : ''}`
                   : 'Tous les codes-barres sont valides !'}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-text-secondary">
                 {validCount} valide{validCount > 1 ? 's' : ''} / {invalidCount} invalide{invalidCount > 1 ? 's' : ''}
               </div>
             </div>
@@ -70,7 +70,7 @@ export function EANDebugger({ isOpen, onClose, onContinue, results }: EANDebugge
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium">{result.format}:</span>
-                    <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">
+                    <code className="bg-surface-raised px-1.5 py-0.5 rounded text-sm font-mono">
                       "{result.value}"
                     </code>
                     <span className={`text-sm ${result.valid ? 'text-green-600' : 'text-red-600'}`}>
@@ -79,12 +79,12 @@ export function EANDebugger({ isOpen, onClose, onContinue, results }: EANDebugge
                   </div>
                   
                   {result.productName && (
-                    <div className="text-sm text-gray-600 mt-1">
+                    <div className="text-sm text-text-secondary mt-1">
                       Produit: {result.productName}
                     </div>
                   )}
                   
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-text-muted">
                     <FileText size={12} className="inline mr-1" />
                     Ligne CSV: {result.lineNumber}
                   </div>
@@ -94,10 +94,10 @@ export function EANDebugger({ isOpen, onClose, onContinue, results }: EANDebugge
                       <div className="text-red-600 font-medium">
                         → {error.message}
                       </div>
-                      <div className="text-gray-500 ml-4 mt-0.5">
+                      <div className="text-text-muted ml-4 mt-0.5">
                         Attendu: {error.expected}
                       </div>
-                      <div className="text-gray-500 ml-4">
+                      <div className="text-text-muted ml-4">
                         Reçu: <code className="bg-red-100 px-1 rounded">{error.received}</code>
                       </div>
                     </div>

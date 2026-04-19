@@ -27,12 +27,12 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onSelectTemplate, onC
             <h2 className="text-2xl font-bold">Créer depuis un template</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 text-2xl"
+              className="text-text-muted hover:text-text-secondary text-2xl"
             >
               ×
             </button>
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-text-secondary mt-2">
             Choisissez un template prédéfini pour démarrer rapidement
           </p>
         </div>
@@ -44,7 +44,7 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onSelectTemplate, onC
 
             return (
               <div key={categoryKey} className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                <h3 className="text-lg font-semibold text-text-primary mb-4">
                   {categoryLabel}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -55,7 +55,7 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onSelectTemplate, onC
                       className="border rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all group"
                     >
                       {/* Thumbnail placeholder */}
-                      <div className="bg-gray-100 rounded-md h-32 mb-3 flex items-center justify-center group-hover:bg-gray-50">
+                      <div className="bg-surface-raised rounded-md h-32 mb-3 flex items-center justify-center group-hover:bg-surface">
                         {template.thumbnail ? (
                           <img
                             src={template.thumbnail}
@@ -63,18 +63,18 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onSelectTemplate, onC
                             className="max-h-full max-w-full object-contain"
                           />
                         ) : (
-                          <div className="text-gray-400 text-sm">
+                          <div className="text-text-muted text-sm">
                             {template.template.width}×{template.template.height}mm
                           </div>
                         )}
                       </div>
 
-                      <h4 className="font-medium text-gray-900">{template.name}</h4>
-                      <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                      <h4 className="font-medium text-text-primary">{template.name}</h4>
+                      <p className="text-sm text-text-muted mt-1 line-clamp-2">
                         {template.description}
                       </p>
 
-                      <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+                      <div className="mt-3 flex items-center gap-2 text-xs text-text-muted">
                         <span>{template.template.elements.length} éléments</span>
                         <span>•</span>
                         <span>{template.template.backgroundColor}</span>
@@ -87,14 +87,14 @@ const TemplateGallery: React.FC<TemplateGalleryProps> = ({ onSelectTemplate, onC
           })}
         </div>
 
-        <div className="p-6 border-t bg-gray-50">
+        <div className="p-6 border-t bg-surface-raised">
           <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-text-muted">
               Vous pourrez personnaliser le template après la création
             </p>
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              className="px-4 py-2 text-text-secondary hover:text-text-primary"
             >
               Annuler
             </button>

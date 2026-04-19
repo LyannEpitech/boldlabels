@@ -66,13 +66,13 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-surface-sunken p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">🏷️ BoldLabels</h1>
-            <p className="text-gray-600 mt-1">Gérez vos templates et mappings</p>
+            <h1 className="text-3xl font-bold text-text-primary">🏷️ BoldLabels</h1>
+            <p className="text-text-secondary mt-1">Gérez vos templates et mappings</p>
           </div>
           <div className="flex gap-2">
             <Button 
@@ -92,15 +92,15 @@ export function DashboardPage() {
         <div className="grid grid-cols-12 gap-6">
           {/* Left Column: Templates */}
           <div className="col-span-4">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
               <FileText size={20} />
               Templates
             </h2>
             
             {templates.length === 0 ? (
               <div className="text-center py-8 bg-white rounded-lg shadow">
-                <FileText size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-gray-500 text-sm">Aucun template</p>
+                <FileText size={32} className="mx-auto text-text-muted mb-2" />
+                <p className="text-text-muted text-sm">Aucun template</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -109,7 +109,7 @@ export function DashboardPage() {
                   return (
                     <Card key={template.id} className="hover:shadow-md transition-shadow overflow-hidden">
                       {/* Thumbnail */}
-                      <div className="h-32 bg-gray-100 flex items-center justify-center overflow-hidden">
+                      <div className="h-32 bg-surface-raised flex items-center justify-center overflow-hidden">
                         <img 
                           src={thumbnail.dataUrl} 
                           alt={template.name}
@@ -147,16 +147,16 @@ export function DashboardPage() {
 
           {/* Right Column: Mappings */}
           <div className="col-span-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h2 className="text-xl font-semibold text-text-primary mb-4 flex items-center gap-2">
               <Settings size={20} />
               Mes Mappings
             </h2>
             
             {mappings.length === 0 ? (
               <div className="text-center py-12 bg-white rounded-lg shadow">
-                <Settings size={48} className="mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun mapping</h3>
-                <p className="text-gray-500 mb-4">Créez un mapping depuis un template pour générer des PDF rapidement</p>
+                <Settings size={48} className="mx-auto text-text-muted mb-4" />
+                <h3 className="text-lg font-medium text-text-primary mb-2">Aucun mapping</h3>
+                <p className="text-text-muted mb-4">Créez un mapping depuis un template pour générer des PDF rapidement</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,7 +169,7 @@ export function DashboardPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-2">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-text-secondary">
                         {mapping.columnMappings.length} variables mappées
                       </p>
                     </CardContent>
@@ -207,7 +207,7 @@ export function DashboardPage() {
           />
 
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Format prédéfini</label>
+            <label className="text-sm font-medium text-text-secondary mb-2 block">Format prédéfini</label>
             <div className="grid grid-cols-2 gap-2">
               {PRESETS.map((preset) => (
                 <button
@@ -215,12 +215,12 @@ export function DashboardPage() {
                   onClick={() => setSelectedPreset(preset.name)}
                   className={`p-3 rounded border text-left ${
                     selectedPreset === preset.name
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-brand-500 bg-brand-50'
+                      : 'border-border hover:border-border-hover'
                   }`}
                 >
                   <div className="font-medium text-sm">{preset.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-text-muted">
                     {preset.width}×{preset.height}mm
                   </div>
                 </button>

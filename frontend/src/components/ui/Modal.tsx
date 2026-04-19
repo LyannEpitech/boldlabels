@@ -48,12 +48,12 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-6 py-4 border-b">
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-1 rounded-lg hover:bg-surface-raised transition-colors"
             >
-              <X size={20} className="text-gray-500" />
+              <X size={20} className="text-text-muted" />
             </button>
           </div>
         )}
@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children, footer, size = 'md' }:
         
         {/* Footer */}
         {footer && (
-          <div className="flex justify-end gap-2 px-6 py-4 border-t bg-gray-50 rounded-b-xl">
+          <div className="flex justify-end gap-2 px-6 py-4 border-t bg-surface-raised rounded-b-xl">
             {footer}
           </div>
         )}
