@@ -76,6 +76,7 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
   const [selectionCurrent, setSelectionCurrent] = useState({ x: 0, y: 0 });
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragPosPx, setDragPosPx] = useState<{ x: number; y: number } | null>(null);
   
   if (!template) {
     return (
@@ -176,6 +177,7 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const handleDragStart = (element: TemplateElement) => {
     setDraggedElement(element);
     setDragPosition({ x: element.x, y: element.y });
+    setDragPosPx({ x: element.x * MM_TO_PX, y: element.y * MM_TO_PX });
   };
 
   const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -185,11 +187,13 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
       x: Math.round((pos.x / MM_TO_PX) * 10) / 10,
       y: Math.round((pos.y / MM_TO_PX) * 10) / 10,
     });
+    setDragPosPx({ x: pos.x, y: pos.y });
   };
 
   const handleDragEnd = () => {
     setDraggedElement(null);
     setDragPosition(null);
+    setDragPosPx(null);
   };
   
   return (
@@ -232,10 +236,10 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
             ))}
 
             {/* Position Indicator during drag */}
-            {dragPosition && draggedElement && (
+            {dragPosition && dragPosPx && (
               <Text
-                x={draggedElement.x * MM_TO_PX}
-                y={draggedElement.y * MM_TO_PX - 20}
+                x={dragPosPx.x}
+                y={dragPosPx.y - 20}
                 text={`X: ${dragPosition.x}mm  Y: ${dragPosition.y}mm`}
                 fontSize={10}
                 fill="#6366F1"
