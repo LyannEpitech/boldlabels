@@ -9,6 +9,7 @@ import { ImageElement } from './elements/ImageElement';
 import { RectangleElement } from './elements/RectangleElement';
 import SmartGuides from './SmartGuides';
 import SelectionBox from './SelectionBox';
+import Guides from './Guides';
 import type { TemplateElement } from '../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -251,6 +252,9 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
               currentPos={selectionCurrent}
               scale={zoom}
             />
+
+            {/* Custom Guides */}
+            <Guides canvasWidth={width} canvasHeight={height} />
 
             {/* Smart Guides */}
             {showSmartGuides && (

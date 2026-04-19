@@ -15,6 +15,9 @@ interface EditorState {
   selectionBox: { x: number; y: number; width: number; height: number } | null;
   isSelecting: boolean;
   
+  // Custom guides
+  guides: { position: number; orientation: 'horizontal' | 'vertical' }[];
+  
   // Canvas
   zoom: number;
   showGrid: boolean;
@@ -56,6 +59,11 @@ interface EditorActions {
   updateSelectionBox: (width: number, height: number) => void;
   endSelectionBox: () => string[];
   
+  // Guides
+  addGuide: (guide: { position: number; orientation: 'horizontal' | 'vertical' }) => void;
+  removeGuide: (index: number) => void;
+  clearGuides: () => void;
+  
   // Copy/Paste
   copiedElements: TemplateElement[];
   copyElements: (ids: string[]) => void;
@@ -90,6 +98,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     selectedElementIds: [],
     selectionBox: null,
     isSelecting: false,
+    guides: [],
     copiedElements: [],
     zoom: 1,
     showGrid: true,
@@ -449,6 +458,17 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       
       return selectedIds;
     },
+    
+    // Guides
+    addGuide: (guide) => set((state) => ({
+      guides: [...state.guides, guide],
+    })),
+    
+    removeGuide: (index) => set((state) => ({
+      guides: state.guides.filter((_, i) => i !== index),
+    })),
+    
+    clearGuides: () => set({ guides: [] }),
     
     // Copy/Paste
     copyElements: (ids) => {
