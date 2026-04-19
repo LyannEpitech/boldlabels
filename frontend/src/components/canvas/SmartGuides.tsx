@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Line, Text } from 'react-konva';
 import type { TemplateElement } from '../../types';
 
+const MM_TO_PX = 3.7795275591;
+
 interface SmartGuidesProps {
   elements: TemplateElement[];
   selectedElementId: string | null;
@@ -49,24 +51,24 @@ const SmartGuides: React.FC<SmartGuidesProps> = ({
     const newDistances: Distance[] = [];
 
     const draggedBounds = {
-      left: draggedElement.x,
-      right: draggedElement.x + draggedElement.width,
-      top: draggedElement.y,
-      bottom: draggedElement.y + draggedElement.height,
-      centerX: draggedElement.x + draggedElement.width / 2,
-      centerY: draggedElement.y + draggedElement.height / 2
+      left: draggedElement.x * MM_TO_PX,
+      right: (draggedElement.x + draggedElement.width) * MM_TO_PX,
+      top: draggedElement.y * MM_TO_PX,
+      bottom: (draggedElement.y + draggedElement.height) * MM_TO_PX,
+      centerX: (draggedElement.x + draggedElement.width / 2) * MM_TO_PX,
+      centerY: (draggedElement.y + draggedElement.height / 2) * MM_TO_PX
     };
 
     elements.forEach(element => {
       if (element.id === selectedElementId) return;
 
       const bounds = {
-        left: element.x,
-        right: element.x + element.width,
-        top: element.y,
-        bottom: element.y + element.height,
-        centerX: element.x + element.width / 2,
-        centerY: element.y + element.height / 2
+        left: element.x * MM_TO_PX,
+        right: (element.x + element.width) * MM_TO_PX,
+        top: element.y * MM_TO_PX,
+        bottom: (element.y + element.height) * MM_TO_PX,
+        centerX: (element.x + element.width / 2) * MM_TO_PX,
+        centerY: (element.y + element.height / 2) * MM_TO_PX
       };
 
       // Vertical alignments
@@ -128,9 +130,9 @@ const SmartGuides: React.FC<SmartGuidesProps> = ({
       }
     });
 
-    // Canvas center lines
-    const canvasCenterX = canvasWidth / 2 / scale;
-    const canvasCenterY = canvasHeight / 2 / scale;
+    // Canvas center lines (canvasWidth/Height are already in px)
+    const canvasCenterX = canvasWidth / 2;
+    const canvasCenterY = canvasHeight / 2;
 
     if (Math.abs(draggedBounds.centerX - canvasCenterX) < SNAP_THRESHOLD) {
       newGuides.push({ type: 'vertical', position: canvasCenterX, from: 'center', to: 'canvas' });
