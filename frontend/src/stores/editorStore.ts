@@ -173,8 +173,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       const { template } = get();
       if (!template) return;
       
-      console.log('[Store] updateTemplate called:', Object.keys(updates));
-      console.log('[Store] Current elements count:', template.elements?.length);
+      // Debug logs removed
       
       // Update local state immediately for responsive UI
       const localUpdated: Template = {
@@ -193,7 +192,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       // Save to backend in background
       try {
         const updated = await dbService.updateTemplate(template.id, updates);
-        console.log('[Store] Backend returned elements count:', updated.elements?.length);
+        // Backend response processed
         
         get().saveToHistory();
         
@@ -205,7 +204,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
           elements: updates.elements !== undefined ? updated.elements : localUpdated.elements,
         };
         
-        console.log('[Store] Merged elements count:', mergedTemplate.elements?.length);
+        // Elements merged successfully
         
         set({
           template: mergedTemplate,
@@ -285,18 +284,14 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       });
       
       // Auto-save to backend
-      dbService.updateTemplate(template.id, { elements: updated.elements })
-        .then((result) => {
-          console.log('Elements saved:', result.elements?.length || 0, 'elements');
-        })
-        .catch(console.error);
+      dbService.updateTemplate(template.id, { elements: updated.elements }).catch(console.error);
     },
     
     updateElement: async (id, updates) => {
       const { template } = get();
       if (!template) return;
 
-      console.log('[Store] updateElement called:', id, Object.keys(updates));
+      // Element update initiated
 
       // Optimistic update
       const element = template.elements.find((el) => el.id === id);
@@ -316,7 +311,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       // Auto-save to backend using PATCH for single element (preserves ID)
       try {
         await dbService.updateElement(template.id, id, updates);
-        console.log('[Store] updateElement saved via PATCH');
+        // Element saved via PATCH
       } catch (error) {
         console.error('[Store] Failed to save element update:', error);
         // Revert on error
@@ -344,7 +339,7 @@ export const useEditorStore = create<EditorState & EditorActions>()(
       // Auto-save to backend
       try {
         await dbService.updateTemplate(template.id, { elements: updated.elements });
-        console.log('[Store] removeElement saved');
+        // Element removed successfully
       } catch (error) {
         console.error('[Store] Failed to save element removal:', error);
         set({ template });
@@ -609,43 +604,94 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     setSnapToGrid: (snap) => set({ snapToGrid: snap }),
     
     alignElements: (alignment) => {
-      const { template, selectedElementId } = get();
-      if (!template || !selectedElementId) return;
+      const { template, selectedElementId, selectedElementIds } = get();
       
-      const selectedEl = template.elements.find((el) => el.id === selectedElementId);
-      if (!selectedEl) return;
+      // Support multi-selection: use selectedElementIds if available, else fall back to selectedElementId
+      const idsToAlign = selectedElementIds.length > 0 
+        ? selectedElementIds 
+        : selectedElementId 
+          ? [selectedElementId] 
+          : [];
+      
+      if (!template || idsToAlign.length === 0) return;
       
       get().saveToHistory();
       
-      let updates: Partial<TemplateElement> = {};
+      // Get elements to align
+      const elementsToAlign = template.elements.filter((el) => idsToAlign.includes(el.id));
+      if (elementsToAlign.length === 0) return;
       
-      switch (alignment) {
-        case 'left':
-          updates = { x: 0 };
-          break;
-        case 'center':
-          updates = { x: (template.width - selectedEl.width) / 2 };
-          break;
-        case 'right':
-          updates = { x: template.width - selectedEl.width };
-          break;
-        case 'top':
-          updates = { y: 0 };
-          break;
-        case 'middle':
-          updates = { y: (template.height - selectedEl.height) / 2 };
-          break;
-        case 'bottom':
-          updates = { y: template.height - selectedEl.height };
-          break;
-      }
-      
-      get().updateElement(selectedElementId, updates);
+      // Apply alignment to each selected element
+      elementsToAlign.forEach((el) => {
+        let updates: Partial<TemplateElement> = {};
+        
+        switch (alignment) {
+          case 'left':
+            updates = { x: 0 };
+            break;
+          case 'center':
+            updates = { x: (template.width - el.width) / 2 };
+            break;
+          case 'right':
+            updates = { x: template.width - el.width };
+            break;
+          case 'top':
+            updates = { y: 0 };
+            break;
+          case 'middle':
+            updates = { y: (template.height - el.height) / 2 };
+            break;
+          case 'bottom':
+            updates = { y: template.height - el.height };
+            break;
+        }
+        
+        get().updateElement(el.id, updates);
+      });
     },
     
     distributeElements: (axis) => {
-      // TODO: Implement multi-selection distribution
-      console.log('Distribute', axis);
+      const { template, selectedElementIds } = get();
+      if (!template || selectedElementIds.length < 3) return;
+      
+      get().saveToHistory();
+      
+      // Get selected elements sorted by position
+      const selectedElements = template.elements
+        .filter((el) => selectedElementIds.includes(el.id))
+        .sort((a, b) => axis === 'horizontal' ? a.x - b.x : a.y - b.y);
+      
+      if (selectedElements.length < 3) return;
+      
+      // Calculate total span
+      const first = selectedElements[0];
+      const last = selectedElements[selectedElements.length - 1];
+      
+      if (axis === 'horizontal') {
+        const totalSpan = (last.x + last.width) - first.x;
+        const totalWidth = selectedElements.reduce((sum, el) => sum + el.width, 0);
+        const gap = (totalSpan - totalWidth) / (selectedElements.length - 1);
+        
+        let currentX = first.x;
+        selectedElements.forEach((el, index) => {
+          if (index > 0) {
+            get().updateElement(el.id, { x: currentX });
+          }
+          currentX += el.width + gap;
+        });
+      } else {
+        const totalSpan = (last.y + last.height) - first.y;
+        const totalHeight = selectedElements.reduce((sum, el) => sum + el.height, 0);
+        const gap = (totalSpan - totalHeight) / (selectedElements.length - 1);
+        
+        let currentY = first.y;
+        selectedElements.forEach((el, index) => {
+          if (index > 0) {
+            get().updateElement(el.id, { y: currentY });
+          }
+          currentY += el.height + gap;
+        });
+      }
     },
     
     groupElements: (ids) => {
