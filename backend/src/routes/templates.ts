@@ -99,15 +99,29 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       const elements = req.body.elements || [];
       
       // Validate elements and convert properties to string
-      const validatedElements = elements.map((el: any) => {
-        const validated = TemplateElementSchema.parse(el);
-        return {
-          ...validated,
-          properties: typeof validated.properties === 'string' 
-            ? validated.properties 
-            : JSON.stringify(validated.properties),
-        };
-      });
+      let validatedElements;
+      try {
+        validatedElements = elements.map((el: any, index: number) => {
+          try {
+            const validated = TemplateElementSchema.parse(el);
+            return {
+              ...validated,
+              properties: typeof validated.properties === 'string' 
+                ? validated.properties 
+                : JSON.stringify(validated.properties),
+            };
+          } catch (zodError: any) {
+            console.error(`Zod validation failed for element at index ${index}:`, el);
+            console.error('Zod errors:', zodError.errors);
+            throw zodError;
+          }
+        });
+      } catch (zodError: any) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: zodError.errors || zodError.message 
+        });
+      }
       
       // Use transaction to update template and elements
       const template = await prisma.$transaction(async (tx) => {
