@@ -1,61 +1,82 @@
-import { type HTMLAttributes, forwardRef } from 'react';
+import React from 'react';
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   padding?: 'none' | 'sm' | 'md' | 'lg';
   shadow?: 'none' | 'sm' | 'md' | 'lg';
+  hover?: boolean;
 }
 
-const paddingStyles = {
-  none: '',
-  sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
+export const Card: React.FC<CardProps> = ({
+  children,
+  padding = 'md',
+  shadow = 'sm',
+  hover = false,
+  className = '',
+  ...props
+}) => {
+  const baseClasses = 'bg-surface rounded-lg border border-border transition-all duration-200';
+  
+  const paddingClasses = {
+    none: '',
+    sm: 'p-3',
+    md: 'p-5',
+    lg: 'p-6',
+  };
+  
+  const shadowClasses = {
+    none: '',
+    sm: 'shadow-sm',
+    md: 'shadow-md',
+    lg: 'shadow-lg',
+  };
+  
+  const hoverClasses = hover
+    ? 'hover:shadow-md hover:border-border-hover cursor-pointer'
+    : '';
+  
+  const classes = [
+    baseClasses,
+    paddingClasses[padding],
+    shadowClasses[shadow],
+    hoverClasses,
+    className,
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div className={classes} {...props}>
+      {children}
+    </div>
+  );
 };
 
-const shadowStyles = {
-  none: '',
-  sm: 'shadow-sm',
-  md: 'shadow-md',
-  lg: 'shadow-lg',
-};
-
-export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ padding = 'md', shadow = 'md', className = '', children, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={`
-          bg-white rounded-xl border border-gray-200
-          ${paddingStyles[padding]}
-          ${shadowStyles[shadow]}
-          ${className}
-        `}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
+export const CardHeader: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+  className = '', ...props 
+}) => (
+  <div className={`flex flex-col space-y-1.5 p-5 ${className}`} {...props} />
 );
 
-Card.displayName = 'Card';
+export const CardTitle: React.FC<React.HTMLAttributes<HTMLHeadingElement>> = ({ 
+  className = '', ...props 
+}) => (
+  <h3 className={`text-base font-semibold leading-none tracking-tight text-text-primary ${className}`} {...props} />
+);
 
-export function CardHeader({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`mb-4 ${className}`}>{children}</div>;
-}
+export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+  className = '', ...props 
+}) => (
+  <div className={`p-5 pt-0 ${className}`} {...props} />
+);
 
-export function CardTitle({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>{children}</h3>;
-}
+export const CardFooter: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ 
+  className = '', ...props 
+}) => (
+  <div className={`flex items-center p-5 pt-0 ${className}`} {...props} />
+);
 
-export function CardDescription({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-sm text-gray-500 mt-1 ${className}`}>{children}</p>;
-}
+export const CardDescription: React.FC<React.HTMLAttributes<HTMLParagraphElement>> = ({ 
+  className = '', ...props 
+}) => (
+  <p className={`text-sm text-text-muted ${className}`} {...props} />
+);
 
-export function CardContent({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={className}>{children}</div>;
-}
-
-export function CardFooter({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`mt-4 pt-4 border-t flex justify-end gap-2 ${className}`}>{children}</div>;
-}
+export default Card;
