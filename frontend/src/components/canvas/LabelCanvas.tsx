@@ -78,10 +78,10 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   
   if (!template) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-100">
+      <div className="flex-1 flex items-center justify-center bg-surface-sunken">
         <div className="text-center">
-          <p className="text-gray-500 text-lg mb-2">Aucun template sélectionné</p>
-          <p className="text-gray-400 text-sm">Créez un nouveau template pour commencer</p>
+          <p className="text-text-secondary text-lg mb-2">Aucun template sélectionné</p>
+          <p className="text-text-muted text-sm">Créez un nouveau template pour commencer</p>
         </div>
       </div>
     );
@@ -192,7 +192,7 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   };
   
   return (
-    <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-auto p-8">
+    <div className="flex-1 bg-surface-sunken flex items-center justify-center overflow-auto p-8">
       <div
         className="bg-white shadow-xl"
         style={{
