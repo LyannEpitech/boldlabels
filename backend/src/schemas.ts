@@ -24,10 +24,10 @@ export const TemplateElementSchema = z.object({
   width: z.number().positive(),
   height: z.number().positive(),
   rotation: z.number().default(0),
-  properties: z.record(z.any()),
+  properties: z.union([z.record(z.any()), z.string()]),
   zIndex: z.number().int(),
   templateId: z.string().optional(),
-  groupId: z.string().optional(),
+  groupId: z.string().nullable().optional(),
 });
 
 export const ColumnMappingSchema = z.object({

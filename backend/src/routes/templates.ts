@@ -143,6 +143,11 @@ export function createTemplateRoutes(prisma: PrismaClient) {
         
         // Upsert elements (update if exists, create if new)
         for (const element of validatedElements) {
+          // Ensure properties is a string for the database
+          const propertiesStr = typeof element.properties === 'string' 
+            ? element.properties 
+            : JSON.stringify(element.properties);
+          
           if (existingIds.includes(element.id)) {
             // Update existing element
             await tx.templateElement.update({
@@ -155,7 +160,7 @@ export function createTemplateRoutes(prisma: PrismaClient) {
                 width: element.width,
                 height: element.height,
                 rotation: element.rotation,
-                properties: element.properties,
+                properties: propertiesStr,
                 zIndex: element.zIndex,
                 groupId: element.groupId,
               },
@@ -164,7 +169,16 @@ export function createTemplateRoutes(prisma: PrismaClient) {
             // Create new element
             await tx.templateElement.create({
               data: {
-                ...element,
+                type: element.type,
+                variableName: element.variableName,
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+                rotation: element.rotation,
+                properties: propertiesStr,
+                zIndex: element.zIndex,
+                groupId: element.groupId,
                 templateId: req.params.id,
               },
             });
