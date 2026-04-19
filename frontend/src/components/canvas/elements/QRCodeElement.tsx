@@ -13,6 +13,7 @@ function mmToPx(mm: number): number {
 
 interface QRCodeElementProps {
   onDragStart?: () => void;
+  onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd?: () => void;
   element: TemplateElement;
   isSelected: boolean;
@@ -20,7 +21,7 @@ interface QRCodeElementProps {
   onChange: (updates: Partial<TemplateElement>) => void;
 }
 
-export function QRCodeElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: QRCodeElementProps) {
+export function QRCodeElement({ element, isSelected, onSelect, onChange, onDragStart, onDragMove, onDragEnd }: QRCodeElementProps) {
   const shapeRef = useRef<Konva.Rect>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const { snapToGrid, gridSize } = useEditorStore();
@@ -80,6 +81,7 @@ export function QRCodeElement({ element, isSelected, onSelect, onChange, onDragS
         onClick={onSelect}
         onTap={onSelect}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
         onDragEnd={(e) => {
           let x = e.target.x() / MM_TO_PX;
           let y = e.target.y() / MM_TO_PX;

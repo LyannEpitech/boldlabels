@@ -22,13 +22,13 @@ export function AlignmentToolbar() {
   const hasSelection = !!selectedElementId;
   
   return (
-    <div className="flex items-center gap-1 p-2 bg-gray-50 border-b">
-      <span className="text-xs text-gray-500 mr-2">Aligner:</span>
+    <div className="flex items-center gap-1 p-2 bg-surface-raised border-b border-border">
+      <span className="text-xs text-text-muted mr-2">Aligner:</span>
       
       <button
         onClick={() => alignElements('left')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Gauche"
       >
         <AlignLeft size={16} />
@@ -37,7 +37,7 @@ export function AlignmentToolbar() {
       <button
         onClick={() => alignElements('center')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Centre (horizontal)"
       >
         <AlignCenter size={16} />
@@ -46,18 +46,18 @@ export function AlignmentToolbar() {
       <button
         onClick={() => alignElements('right')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Droite"
       >
         <AlignRight size={16} />
       </button>
       
-      <div className="w-px h-4 bg-gray-300 mx-1" />
+      <div className="w-px h-4 bg-border mx-1" />
       
       <button
         onClick={() => alignElements('top')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Haut"
       >
         <AlignStartVertical size={16} />
@@ -66,7 +66,7 @@ export function AlignmentToolbar() {
       <button
         onClick={() => alignElements('middle')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Milieu (vertical)"
       >
         <AlignVerticalJustifyCenter size={16} />
@@ -75,17 +75,17 @@ export function AlignmentToolbar() {
       <button
         onClick={() => alignElements('bottom')}
         disabled={!hasSelection}
-        className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+        className="p-1.5 rounded hover:bg-surface-sunken disabled:opacity-30 disabled:cursor-not-allowed text-text-secondary"
         title="Bas"
       >
         <AlignEndVertical size={16} />
       </button>
       
-      <div className="w-px h-4 bg-gray-300 mx-1" />
+      <div className="w-px h-4 bg-border mx-1" />
       
       <button
         onClick={() => setSnapToGrid(!snapToGrid)}
-        className={`p-1.5 rounded flex items-center gap-1 ${snapToGrid ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-200'}`}
+        className={`p-1.5 rounded flex items-center gap-1 ${snapToGrid ? 'bg-brand-100 text-brand-600' : 'hover:bg-surface-sunken text-text-secondary'}`}
         title="Aligner sur la grille"
       >
         <Magnet size={16} />
@@ -93,7 +93,7 @@ export function AlignmentToolbar() {
       </button>
       
       {snapToGrid && (
-        <span className="text-xs text-gray-500 ml-1">{gridSize}mm</span>
+        <span className="text-xs text-text-muted ml-1">{gridSize}mm</span>
       )}
     </div>
   );

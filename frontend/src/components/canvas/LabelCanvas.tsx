@@ -1,4 +1,4 @@
-import { Stage, Layer, Rect } from 'react-konva';
+import { Stage, Layer, Rect, Text } from 'react-konva';
 import Konva from 'konva';
 import { useState } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
@@ -9,6 +9,7 @@ import { ImageElement } from './elements/ImageElement';
 import { RectangleElement } from './elements/RectangleElement';
 import SmartGuides from './SmartGuides';
 import SelectionBox from './SelectionBox';
+import Guides from './Guides';
 import type { TemplateElement } from '../../types';
 
 const MM_TO_PX = 3.7795275591;
@@ -23,16 +24,18 @@ interface CanvasElementProps {
   onSelect: (e?: Konva.KonvaEventObject<MouseEvent>) => void;
   onChange: (updates: Partial<TemplateElement>) => void;
   onDragStart?: () => void;
+  onDragMove?: (e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd?: () => void;
 }
 
-function CanvasElement({ element, isSelected, onSelect, onChange, onDragStart, onDragEnd }: CanvasElementProps) {
+function CanvasElement({ element, isSelected, onSelect, onChange, onDragStart, onDragMove, onDragEnd }: CanvasElementProps) {
   const commonProps = {
     element,
     isSelected,
     onSelect,
     onChange,
     onDragStart,
+    onDragMove,
     onDragEnd
   };
 
@@ -72,13 +75,15 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
   const [selectionCurrent, setSelectionCurrent] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragPosPx, setDragPosPx] = useState<{ x: number; y: number } | null>(null);
   
   if (!template) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gray-100">
+      <div className="flex-1 flex items-center justify-center bg-surface-sunken">
         <div className="text-center">
-          <p className="text-gray-500 text-lg mb-2">Aucun template sélectionné</p>
-          <p className="text-gray-400 text-sm">Créez un nouveau template pour commencer</p>
+          <p className="text-text-secondary text-lg mb-2">Aucun template sélectionné</p>
+          <p className="text-text-muted text-sm">Créez un nouveau template pour commencer</p>
         </div>
       </div>
     );
@@ -171,14 +176,28 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
 
   const handleDragStart = (element: TemplateElement) => {
     setDraggedElement(element);
+    setDragPosition({ x: element.x, y: element.y });
+    setDragPosPx({ x: element.x * MM_TO_PX, y: element.y * MM_TO_PX });
+  };
+
+  const handleDragMove = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!draggedElement) return;
+    const pos = e.target.position();
+    setDragPosition({
+      x: Math.round((pos.x / MM_TO_PX) * 10) / 10,
+      y: Math.round((pos.y / MM_TO_PX) * 10) / 10,
+    });
+    setDragPosPx({ x: pos.x, y: pos.y });
   };
 
   const handleDragEnd = () => {
     setDraggedElement(null);
+    setDragPosition(null);
+    setDragPosPx(null);
   };
   
   return (
-    <div className="flex-1 bg-gray-100 flex items-center justify-center overflow-auto p-8">
+    <div className="flex-1 bg-surface-sunken flex items-center justify-center overflow-auto p-8">
       <div
         className="bg-white shadow-xl"
         style={{
@@ -211,9 +230,24 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
                 }}
                 onChange={(updates) => updateElement(element.id, updates)}
                 onDragStart={() => handleDragStart(element)}
+                onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
               />
             ))}
+
+            {/* Position Indicator during drag */}
+            {dragPosition && dragPosPx && (
+              <Text
+                x={dragPosPx.x}
+                y={dragPosPx.y - 20}
+                text={`X: ${dragPosition.x}mm  Y: ${dragPosition.y}mm`}
+                fontSize={10}
+                fill="#6366F1"
+                fontFamily="monospace"
+                padding={4}
+                background="#EEF2FF"
+              />
+            )}
 
             {/* Rubber Band Selection Box */}
             <SelectionBox
@@ -222,6 +256,9 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
               currentPos={selectionCurrent}
               scale={zoom}
             />
+
+            {/* Custom Guides */}
+            <Guides canvasWidth={width} canvasHeight={height} />
 
             {/* Smart Guides */}
             {showSmartGuides && (
