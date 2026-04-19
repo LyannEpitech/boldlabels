@@ -166,13 +166,13 @@ const SmartGuides: React.FC<SmartGuidesProps> = ({
       ))}
 
       {/* Distance labels */}
-      {distances.map((dist, index) => (
+      {draggedElement && distances.map((dist, index) => (
         <React.Fragment key={`dist-${index}`}>
           <Line
             points={
               dist.isHorizontal
-                ? [dist.from, draggedElement!.y + draggedElement!.height / 2, dist.to, draggedElement!.y + draggedElement!.height / 2]
-                : [draggedElement!.x + draggedElement!.width / 2, dist.from, draggedElement!.x + draggedElement!.width / 2, dist.to]
+                ? [dist.from, draggedElement.y + draggedElement.height / 2, dist.to, draggedElement.y + draggedElement.height / 2]
+                : [draggedElement.x + draggedElement.width / 2, dist.from, draggedElement.x + draggedElement.width / 2, dist.to]
             }
             stroke="#FF4444"
             strokeWidth={1 / scale}
@@ -180,8 +180,8 @@ const SmartGuides: React.FC<SmartGuidesProps> = ({
             opacity={0.6}
           />
           <Text
-            x={dist.isHorizontal ? (dist.from + dist.to) / 2 - 15 : draggedElement!.x + draggedElement!.width / 2 + 5}
-            y={dist.isHorizontal ? draggedElement!.y + draggedElement!.height / 2 - 15 : (dist.from + dist.to) / 2 - 7}
+            x={dist.isHorizontal ? (dist.from + dist.to) / 2 - 15 : draggedElement.x + draggedElement.width / 2 + 5}
+            y={dist.isHorizontal ? draggedElement.y + draggedElement.height / 2 - 15 : (dist.from + dist.to) / 2 - 7}
             text={`${dist.value.toFixed(1)}mm`}
             fontSize={10 / scale}
             fill="#FF4444"
