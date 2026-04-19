@@ -15,7 +15,9 @@ import {
   Utensils,
   Sparkles,
   Palette,
-  X
+  X,
+  Download,
+  Upload
 } from 'lucide-react';
 import type { Template } from '../types';
 
@@ -36,7 +38,9 @@ export function Sidebar() {
     loadTemplate, 
     deleteTemplate, 
     duplicateTemplate, 
-    updateTemplate 
+    updateTemplate,
+    exportTemplate,
+    importTemplate
   } = useEditorStore();
   
   const [showNewForm, setShowNewForm] = useState(false);
@@ -212,6 +216,55 @@ export function Sidebar() {
                 ))}
               </div>
             )}
+            
+            {/* Import/Export */}
+            <div className="pt-4 border-t border-border space-y-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
+                leftIcon={<Download className="w-4 h-4" />}
+                onClick={() => {
+                  if (template) {
+                    const json = exportTemplate();
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${template.name}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }
+                }}
+                disabled={!template}
+              >
+                Exporter le template
+              </Button>
+              
+              <label className="block cursor-pointer">
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const json = event.target?.result as string;
+                        importTemplate(json);
+                      };
+                      reader.readAsText(file);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+                <div className="w-full px-4 py-2 text-sm font-medium rounded-md bg-transparent border border-dashed border-border hover:border-brand-300 text-text-secondary hover:text-brand-600 flex items-center justify-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Importer un template
+                </div>
+              </label>
+            </div>
           </div>
         ) : (
           <div className="p-4 space-y-4">

@@ -80,6 +80,14 @@ interface EditorActions {
   alignElements: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeElements: (axis: 'horizontal' | 'vertical') => void;
   
+  // Grouping
+  groupElements: (ids: string[]) => string;
+  ungroupElements: (groupId: string) => void;
+  
+  // Import/Export
+  exportTemplate: () => string;
+  importTemplate: (json: string) => void;
+  
   // Historique
   undo: () => void;
   redo: () => void;
@@ -634,6 +642,97 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     distributeElements: (axis) => {
       // TODO: Implement multi-selection distribution
       console.log('Distribute', axis);
+    },
+    
+    groupElements: (ids) => {
+      const { template } = get();
+      if (!template || ids.length < 2) return '';
+      
+      get().saveToHistory();
+      
+      const groupId = crypto.randomUUID();
+      
+      const updatedElements = template.elements.map((el) =>
+        ids.includes(el.id) ? { ...el, groupId } : el
+      );
+      
+      const updated: Template = {
+        ...template,
+        elements: updatedElements,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({ template: updated });
+      
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .catch(console.error);
+      
+      return groupId;
+    },
+    
+    ungroupElements: (groupId) => {
+      const { template } = get();
+      if (!template) return;
+      
+      get().saveToHistory();
+      
+      const updatedElements = template.elements.map((el) =>
+        el.groupId === groupId ? { ...el, groupId: undefined } : el
+      );
+      
+      const updated: Template = {
+        ...template,
+        elements: updatedElements,
+        updatedAt: new Date().toISOString(),
+      };
+      
+      set({ template: updated });
+      
+      dbService.updateTemplate(template.id, { elements: updated.elements })
+        .catch(console.error);
+    },
+    
+    exportTemplate: () => {
+      const { template } = get();
+      if (!template) return '';
+      
+      const exportData = {
+        ...template,
+        exportedAt: new Date().toISOString(),
+        version: '1.0',
+      };
+      
+      return JSON.stringify(exportData, null, 2);
+    },
+    
+    importTemplate: (json) => {
+      try {
+        const parsed = JSON.parse(json);
+        
+        // Validation basique
+        if (!parsed.name || !parsed.width || !parsed.height) {
+          throw new Error('Invalid template format');
+        }
+        
+        get().createTemplate({
+          name: `${parsed.name} (importé)`,
+          width: parsed.width,
+          height: parsed.height,
+          unit: parsed.unit || 'mm',
+          backgroundColor: parsed.backgroundColor || '#FFFFFF',
+          borderWidth: parsed.borderWidth || 0,
+          borderColor: parsed.borderColor || '#000000',
+          borderRadius: parsed.borderRadius || 0,
+          description: parsed.description || '',
+          elements: (parsed.elements || []).map((el: any) => ({
+            ...el,
+            id: crypto.randomUUID(), // Nouveaux IDs
+          })),
+        });
+      } catch (error) {
+        console.error('Failed to import template:', error);
+        set({ error: 'Failed to import template' });
+      }
     },
     
     saveToHistory: () => {

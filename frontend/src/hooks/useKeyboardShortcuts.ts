@@ -23,6 +23,8 @@ export const useKeyboardShortcuts = () => {
     pasteElements,
     duplicateElement,
     duplicateMultipleElements,
+    groupElements,
+    ungroupElements,
     updateElement,
     undo,
     redo,
@@ -123,6 +125,33 @@ export const useKeyboardShortcuts = () => {
           duplicateMultipleElements(selectedElementIds);
         } else if (selectedElementId) {
           duplicateElement(selectedElementId);
+        }
+      }
+    },
+    
+    // Groupement
+    {
+      key: 'g',
+      ctrl: true,
+      shift: false,
+      description: 'Grouper les éléments',
+      action: () => {
+        if (selectedElementIds.length >= 2) {
+          groupElements(selectedElementIds);
+        }
+      }
+    },
+    {
+      key: 'g',
+      ctrl: true,
+      shift: true,
+      description: 'Dégrouper',
+      action: () => {
+        if (selectedElementId && template) {
+          const element = template.elements.find(el => el.id === selectedElementId);
+          if (element?.groupId) {
+            ungroupElements(element.groupId);
+          }
         }
       }
     },
