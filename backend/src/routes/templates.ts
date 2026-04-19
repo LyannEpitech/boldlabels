@@ -103,28 +103,64 @@ export function createTemplateRoutes(prisma: PrismaClient) {
         const validated = TemplateElementSchema.parse(el);
         return {
           ...validated,
-          properties: JSON.stringify(validated.properties),
+          properties: typeof validated.properties === 'string' 
+            ? validated.properties 
+            : JSON.stringify(validated.properties),
         };
       });
       
       // Use transaction to update template and elements
       const template = await prisma.$transaction(async (tx) => {
-        // Delete existing elements if new elements are provided
-        if (req.body.elements !== undefined) {
+        // Get existing element IDs
+        const existingElements = await tx.templateElement.findMany({
+          where: { templateId: req.params.id },
+          select: { id: true },
+        });
+        const existingIds = existingElements.map(e => e.id);
+        const newIds = validatedElements.map((e: any) => e.id).filter(Boolean);
+        
+        // Delete elements that are no longer in the list
+        const idsToDelete = existingIds.filter(id => !newIds.includes(id));
+        if (idsToDelete.length > 0) {
           await tx.templateElement.deleteMany({
-            where: { templateId: req.params.id },
+            where: { id: { in: idsToDelete } },
           });
         }
         
-        // Update template with new elements
+        // Upsert elements (update if exists, create if new)
+        for (const element of validatedElements) {
+          if (existingIds.includes(element.id)) {
+            // Update existing element
+            await tx.templateElement.update({
+              where: { id: element.id },
+              data: {
+                type: element.type,
+                variableName: element.variableName,
+                x: element.x,
+                y: element.y,
+                width: element.width,
+                height: element.height,
+                rotation: element.rotation,
+                properties: element.properties,
+                zIndex: element.zIndex,
+                groupId: element.groupId,
+              },
+            });
+          } else {
+            // Create new element
+            await tx.templateElement.create({
+              data: {
+                ...element,
+                templateId: req.params.id,
+              },
+            });
+          }
+        }
+        
+        // Update template fields
         return tx.template.update({
           where: { id: req.params.id },
-          data: {
-            ...validated,
-            elements: req.body.elements !== undefined ? {
-              create: validatedElements,
-            } : undefined,
-          },
+          data: validated,
           include: { elements: true },
         });
       });
