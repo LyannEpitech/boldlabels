@@ -289,6 +289,7 @@ export function Toolbar() {
             size="sm"
             onClick={() => setZoom(Math.max(0.25, zoom - 0.25))}
             disabled={zoom <= 0.25}
+            title="Zoom arrière"
           >
             <ZoomOut className="w-4 h-4" />
           </Button>
