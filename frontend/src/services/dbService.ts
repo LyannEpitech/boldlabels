@@ -85,6 +85,35 @@ export const dbService = {
     }
   },
 
+  // Update a single element (preserves element ID)
+  async updateElement(templateId: string, elementId: string, updates: Partial<Template['elements'][0]>): Promise<Template> {
+    if (isElectron() && electronAPI) {
+      // Fallback to updateTemplate for Electron
+      const template = await electronAPI.getTemplate(templateId);
+      if (!template) throw new Error('Template not found');
+      const updatedElements = template.elements.map((el: any) =>
+        el.id === elementId ? { ...el, ...updates } : el
+      );
+      return electronAPI.updateTemplate(templateId, { elements: updatedElements });
+    } else {
+      const res = await fetch(`/api/templates/${templateId}/elements/${elementId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error('Failed to update element');
+      const template = await res.json();
+      // Parse properties from string to object
+      if (template && template.elements) {
+        template.elements = template.elements.map((el: any) => ({
+          ...el,
+          properties: typeof el.properties === 'string' ? JSON.parse(el.properties) : el.properties,
+        }));
+      }
+      return template;
+    }
+  },
+
   async deleteTemplate(id: string): Promise<void> {
     if (isElectron() && electronAPI) {
       await electronAPI.deleteTemplate(id);

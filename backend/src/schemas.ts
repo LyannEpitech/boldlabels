@@ -27,6 +27,7 @@ export const TemplateElementSchema = z.object({
   properties: z.record(z.any()),
   zIndex: z.number().int(),
   templateId: z.string().optional(),
+  groupId: z.string().optional(),
 });
 
 export const ColumnMappingSchema = z.object({
