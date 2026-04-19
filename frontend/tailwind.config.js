@@ -32,6 +32,11 @@ export default {
           muted:     '#94A3B8',
           inverse:   '#FFFFFF',
         },
+        // Border
+        border: {
+          DEFAULT: '#E2E8F0',
+          hover:   '#CBD5E1',
+        },
         // Semantic
         success: { 
           light: '#DCFCE7', 

@@ -17,7 +17,7 @@ export const useKeyboardShortcuts = () => {
     copiedElements,
     removeElement,
     removeMultipleElements,
-    selectElement,
+    selectMultipleElements,
     clearSelection,
     copyElements,
     pasteElements,
@@ -88,7 +88,7 @@ export const useKeyboardShortcuts = () => {
       action: () => {
         if (template) {
           const allIds = template.elements.map(el => el.id);
-          selectElement(allIds[allIds.length - 1] || null);
+          selectMultipleElements(allIds);
         }
       }
     },

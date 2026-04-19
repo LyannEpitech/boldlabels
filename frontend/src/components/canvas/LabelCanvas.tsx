@@ -69,12 +69,14 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
     toggleElementSelection,
     updateElement, 
     zoom, 
-    showGrid 
+    showGrid,
+    isSelecting,
+    selectionBox,
+    startSelectionBox,
+    updateSelectionBox,
+    endSelectionBox
   } = store;
   const [draggedElement, setDraggedElement] = useState<TemplateElement | null>(null);
-  const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState({ x: 0, y: 0 });
-  const [selectionCurrent, setSelectionCurrent] = useState({ x: 0, y: 0 });
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [dragPosPx, setDragPosPx] = useState<{ x: number; y: number } | null>(null);
   
@@ -123,36 +125,33 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
   
   const handleStageMouseDown = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target !== e.target.getStage()) return;
-    
+
     const pos = e.target.getStage()?.getPointerPosition();
     if (!pos) return;
-    
-    setIsSelecting(true);
-    setSelectionStart(pos);
-    setSelectionCurrent(pos);
+
+    // Convert to mm for store
+    const mmX = pos.x / MM_TO_PX;
+    const mmY = pos.y / MM_TO_PX;
+    startSelectionBox(mmX, mmY);
   };
 
   const handleStageMouseMove = (e: Konva.KonvaEventObject<MouseEvent>) => {
-    if (!isSelecting) return;
-    
+    if (!isSelecting || !selectionBox) return;
+
     const pos = e.target.getStage()?.getPointerPosition();
     if (!pos) return;
-    
-    setSelectionCurrent(pos);
+
+    // Calculate width/height in mm
+    const startXPx = selectionBox.x * MM_TO_PX;
+    const startYPx = selectionBox.y * MM_TO_PX;
+    const widthMm = (pos.x - startXPx) / MM_TO_PX;
+    const heightMm = (pos.y - startYPx) / MM_TO_PX;
+    updateSelectionBox(widthMm, heightMm);
   };
 
   const handleStageMouseUp = () => {
     if (!isSelecting) return;
-    
-    const boxWidth = Math.abs(selectionCurrent.x - selectionStart.x);
-    const boxHeight = Math.abs(selectionCurrent.y - selectionStart.y);
-    
-    // Only trigger if selection is significant
-    if (boxWidth > 5 && boxHeight > 5) {
-      store.endSelectionBox();
-    }
-    
-    setIsSelecting(false);
+    endSelectionBox();
   };
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -250,12 +249,17 @@ export function LabelCanvas({ showSmartGuides = false }: LabelCanvasProps) {
             )}
 
             {/* Rubber Band Selection Box */}
-            <SelectionBox
-              isSelecting={isSelecting}
-              startPos={selectionStart}
-              currentPos={selectionCurrent}
-              scale={zoom}
-            />
+            {isSelecting && selectionBox && (
+              <SelectionBox
+                isSelecting={isSelecting}
+                startPos={{ x: selectionBox.x * MM_TO_PX, y: selectionBox.y * MM_TO_PX }}
+                currentPos={{ 
+                  x: (selectionBox.x + selectionBox.width) * MM_TO_PX, 
+                  y: (selectionBox.y + selectionBox.height) * MM_TO_PX 
+                }}
+                scale={zoom}
+              />
+            )}
 
             {/* Custom Guides */}
             <Guides canvasWidth={width} canvasHeight={height} />

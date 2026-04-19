@@ -8,7 +8,6 @@ import { AlignmentToolbar } from '../components/canvas/AlignmentToolbar';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import TemplateGallery from '../components/TemplateGallery';
 import LivePreview from '../components/LivePreview';
-import { PositionIndicator } from '../components/canvas/PositionIndicator';
 import { Ruler } from '../components/canvas/Ruler';
 import type { Template } from '../types';
 
@@ -17,31 +16,9 @@ export function EditorPage() {
   const { template, templates, loadTemplate, createTemplate, addGuide } = useEditorStore();
   const [showGallery, setShowGallery] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [showPosition, setShowPosition] = useState(false);
 
   // Enable keyboard shortcuts
   useKeyboardShortcuts();
-
-  // Track mouse position for position indicator
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleMouseDown = () => setShowPosition(true);
-    const handleMouseUp = () => setShowPosition(false);
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, []);
 
   useEffect(() => {
     if (id && (!template || template.id !== id)) {
@@ -128,13 +105,6 @@ export function EditorPage() {
               )}
               {!template && <LabelCanvas showSmartGuides />}
             </div>
-            
-            {/* Position Indicator */}
-            <PositionIndicator
-              x={mousePosition.x}
-              y={mousePosition.y}
-              visible={showPosition && !!template}
-            />
           </div>
 
           {/* Panneau d'aperçu */}
