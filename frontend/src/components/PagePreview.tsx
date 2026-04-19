@@ -53,8 +53,8 @@ export function PagePreview({
   }
 
   return (
-    <div className="bg-gray-100 p-4 rounded-lg overflow-auto">
-      <div className="text-sm text-gray-600 mb-2">
+    <div className="bg-surface-raised p-4 rounded-lg overflow-auto">
+      <div className="text-sm text-text-secondary mb-2">
         Aperçu de la page ({labelLayout.labelsPerRow} × {labelLayout.labelsPerColumn} = {labelLayout.labelsPerPage} étiquettes)
       </div>
       
@@ -90,7 +90,7 @@ export function PagePreview({
                       scale={0.5}
                     />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-xs">
+                    <div className="absolute inset-0 flex items-center justify-center text-text-muted text-xs">
                       Vide
                     </div>
                   )}
@@ -101,7 +101,7 @@ export function PagePreview({
         </div>
       </div>
 
-      <div className="text-xs text-gray-500 mt-2 text-center">
+      <div className="text-xs text-text-muted mt-2 text-center">
         Dimensions: {pageWidth}mm × {pageHeight}mm | 
         Étiquette: {template.width}mm × {template.height}mm
       </div>

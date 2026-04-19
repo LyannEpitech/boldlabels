@@ -119,24 +119,24 @@ export function LayoutPresetManager({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-gray-900">Presets de mise en page</h3>
+        <h3 className="font-medium text-text-primary">Presets de mise en page</h3>
         <button
           onClick={() => setShowSaveModal(true)}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          className="text-sm text-brand-600 hover:text-brand-800"
         >
           + Sauvegarder l'actuel
         </button>
       </div>
 
       {presets.length === 0 ? (
-        <p className="text-sm text-gray-500">Aucun preset sauvegardé</p>
+        <p className="text-sm text-text-muted">Aucun preset sauvegardé</p>
       ) : (
         <div className="space-y-2">
           {presets.map((preset) => (
             <div
               key={preset.id}
               className={`flex items-center justify-between p-2 rounded border ${
-                preset.isDefault ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'
+                preset.isDefault ? 'bg-brand-50 border-brand-200' : 'bg-white border-border'
               }`}
             >
               <button
@@ -144,7 +144,7 @@ export function LayoutPresetManager({
                 className="flex-1 text-left"
               >
                 <div className="font-medium text-sm">{preset.name}</div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-text-muted">
                   {preset.pageSize} {preset.orientation} • 
                   {preset.labelsPerRow}×{preset.labelsPerColumn} • 
                   Espacement: {preset.horizontalSpacing}mm/{preset.verticalSpacing}mm
@@ -152,7 +152,7 @@ export function LayoutPresetManager({
               </button>
               <div className="flex items-center gap-2">
                 {preset.isDefault && (
-                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  <span className="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded">
                     Défaut
                   </span>
                 )}
@@ -192,14 +192,14 @@ export function LayoutPresetManager({
             <div className="flex gap-2">
               <button
                 onClick={() => setShowSaveModal(false)}
-                className="flex-1 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                className="flex-1 py-2 bg-surface-raised rounded hover:bg-surface"
               >
                 Annuler
               </button>
               <button
                 onClick={handleSavePreset}
                 disabled={!presetName.trim() || isLoading}
-                className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                className="flex-1 py-2 bg-brand-600 text-white rounded hover:bg-brand-700 disabled:opacity-50"
               >
                 {isLoading ? '...' : 'Sauvegarder'}
               </button>

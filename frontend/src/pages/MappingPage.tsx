@@ -83,7 +83,7 @@ export function MappingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-surface-sunken p-8">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link to={`/editor/${id}`}>
@@ -92,8 +92,8 @@ export function MappingPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mapping CSV</h1>
-            <p className="text-gray-600">{template?.name}</p>
+            <h1 className="text-2xl font-bold text-text-primary">Mapping CSV</h1>
+            <p className="text-text-secondary">{template?.name}</p>
           </div>
         </div>
 
@@ -102,9 +102,9 @@ export function MappingPage() {
             <CardTitle>Importer un fichier CSV</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <Upload size={48} className="mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-4">Glissez-déposez ou cliquez pour sélectionner un fichier CSV</p>
+            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center">
+              <Upload size={48} className="mx-auto text-text-muted mb-4" />
+              <p className="text-text-secondary mb-4">Glissez-déposez ou cliquez pour sélectionner un fichier CSV</p>
               <input
                 type="file"
                 accept=".csv"
@@ -113,7 +113,7 @@ export function MappingPage() {
                 id="csv-upload"
               />
               <label htmlFor="csv-upload" className="cursor-pointer">
-                <span className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <span className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
                   <Upload size={16} />
                   Sélectionner un fichier
                 </span>
@@ -130,21 +130,21 @@ export function MappingPage() {
             <CardContent>
               {/* Alert for unmapped variables or no variables */}
               {template.elements.length === 0 ? (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                  <AlertTriangle className="text-yellow-500 mt-0.5" size={20} />
+                <div className="mb-4 p-4 bg-warning-light border border-warning rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="text-warning mt-0.5" size={20} />
                   <div>
-                    <div className="font-medium text-yellow-800">Aucune variable</div>
-                    <div className="text-sm text-yellow-700">
+                    <div className="font-medium text-warning-dark">Aucune variable</div>
+                    <div className="text-sm text-warning-dark">
                       Ce template ne contient aucune variable. Ajoutez des éléments avec des noms de variables dans l'éditeur.
                     </div>
                   </div>
                 </div>
               ) : template.elements.some((el) => !mappings[el.variableName]) && (
-                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                  <AlertTriangle className="text-yellow-500 mt-0.5" size={20} />
+                <div className="mb-4 p-4 bg-warning-light border border-warning rounded-lg flex items-start gap-3">
+                  <AlertTriangle className="text-warning mt-0.5" size={20} />
                   <div>
-                    <div className="font-medium text-yellow-800">Variables non mappées</div>
-                    <div className="text-sm text-yellow-700">
+                    <div className="font-medium text-warning-dark">Variables non mappées</div>
+                    <div className="text-sm text-warning-dark">
                       {template.elements
                         .filter((el) => !mappings[el.variableName])
                         .map((el) => el.variableName)
@@ -155,10 +155,10 @@ export function MappingPage() {
               )}
               <div className="space-y-4">
                 {template.elements.map((element) => (
-                  <div key={element.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded">
+                  <div key={element.id} className="flex items-center gap-4 p-4 bg-surface-raised rounded">
                     <div className="flex-1">
                       <div className="font-medium">{element.variableName}</div>
-                      <div className="text-sm text-gray-500">Type: {element.type}</div>
+                      <div className="text-sm text-text-muted">Type: {element.type}</div>
                     </div>
                     <div className="flex-1">
                       <select
@@ -206,11 +206,11 @@ export function MappingPage() {
                 {savedMappings.map((mapping) => (
                   <div
                     key={mapping.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                    className="flex items-center justify-between p-3 bg-surface-raised rounded"
                   >
                     <div>
                       <div className="font-medium">{mapping.name}</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-text-muted">
                         {mapping.columnMappings.length} associations
                       </div>
                     </div>

@@ -225,7 +225,7 @@ export function GeneratePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-surface-sunken p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <Link to={`/mapping/${id}`}>
@@ -234,17 +234,17 @@ export function GeneratePage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Générer les étiquettes</h1>
-            <p className="text-gray-600">{template?.name}</p>
+            <h1 className="text-2xl font-bold text-text-primary">Générer les étiquettes</h1>
+            <p className="text-text-secondary">{template?.name}</p>
           </div>
         </div>
 
         {csvData.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <Upload size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune donnée CSV</h3>
-              <p className="text-gray-500 mb-4">Importez un fichier CSV pour générer les étiquettes</p>
+              <Upload size={48} className="mx-auto text-text-muted mb-4" />
+              <h3 className="text-lg font-medium text-text-primary mb-2">Aucune donnée CSV</h3>
+              <p className="text-text-muted mb-4">Importez un fichier CSV pour générer les étiquettes</p>
               <Button onClick={() => setShowUploadModal(true)} leftIcon={<Upload size={16} />}>
                 Importer CSV
               </Button>
@@ -261,7 +261,7 @@ export function GeneratePage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-700">Format de page</label>
+                        <label className="text-sm font-medium text-text-secondary">Format de page</label>
                         <select
                           value={pdfOptions.pageSize}
                           onChange={(e) => setPdfOptions({ ...pdfOptions, pageSize: e.target.value as any })}
@@ -273,7 +273,7 @@ export function GeneratePage() {
                         </select>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-700">Orientation</label>
+                        <label className="text-sm font-medium text-text-secondary">Orientation</label>
                         <select
                           value={pdfOptions.orientation}
                           onChange={(e) => setPdfOptions({ ...pdfOptions, orientation: e.target.value as any })}
@@ -286,7 +286,7 @@ export function GeneratePage() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Marges (mm)</label>
+                      <label className="text-sm font-medium text-text-secondary">Marges (mm)</label>
                       <div className="grid grid-cols-4 gap-2 mt-1">
                         <Input
                           label="Haut"
@@ -338,7 +338,7 @@ export function GeneratePage() {
                   <div className="mb-4">
                     <button
                       onClick={() => setIsAutoCalculated(false)}
-                      className="text-sm text-blue-600 hover:text-blue-800 underline"
+                      className="text-sm text-brand-600 hover:text-brand-800 underline"
                     >
                       Calculer automatiquement selon la taille de l'étiquette
                     </button>
@@ -405,8 +405,8 @@ export function GeneratePage() {
                       labelLayout={labelLayout}
                     />
                   ) : (
-                    <div className="bg-gray-100 rounded p-4 border-2 border-dashed border-gray-300">
-                      <div className="text-center text-gray-500">
+                    <div className="bg-surface-raised rounded p-4 border-2 border-dashed border-border">
+                      <div className="text-center text-text-muted">
                         <FileText size={32} className="mx-auto mb-2" />
                         <p className="text-sm">Aperçu non disponible</p>
                       </div>
@@ -432,11 +432,11 @@ export function GeneratePage() {
 
       <Modal isOpen={showUploadModal} onClose={() => csvData.length > 0 && setShowUploadModal(false)} title="Importer un fichier CSV">
         <div className="text-center py-8">
-          <Upload size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="text-gray-600 mb-4">Sélectionnez un fichier CSV contenant vos données</p>
+          <Upload size={48} className="mx-auto text-text-muted mb-4" />
+          <p className="text-text-secondary mb-4">Sélectionnez un fichier CSV contenant vos données</p>
           <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" id="csv-upload" />
           <label htmlFor="csv-upload" className="cursor-pointer">
-            <span className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <span className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700">
               <Upload size={16} />
               Sélectionner un fichier
             </span>

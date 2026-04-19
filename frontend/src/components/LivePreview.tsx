@@ -137,19 +137,19 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
         <h3 className="font-semibold">Aperçu</h3>
         <button
           onClick={onClose}
-          className="text-gray-500 hover:text-gray-700"
+          className="text-text-muted hover:text-text-secondary"
         >
           ×
         </button>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 bg-gray-50">
-        <div className="mb-4 text-sm text-gray-600">
+      <div className="flex-1 overflow-auto p-4 bg-surface-raised">
+        <div className="mb-4 text-sm text-text-secondary">
           Données d'exemple :
           <ul className="mt-1 space-y-1 text-xs">
             {Object.entries(sampleData).map(([key, val]) => (
               <li key={key}>
-                <span className="font-mono bg-gray-200 px-1 rounded">{key}</span>: {val}
+                <span className="font-mono bg-surface px-1 rounded">{key}</span>: {val}
               </li>
             ))}
           </ul>
@@ -191,7 +191,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ template, isOpen, onClose }) 
           </Stage>
         </div>
 
-        <div className="mt-4 text-xs text-gray-500">
+        <div className="mt-4 text-xs text-text-muted">
           <p>Format: {template.width}×{template.height}mm</p>
           <p>{template.elements.length} éléments</p>
         </div>

@@ -38,17 +38,17 @@ export function EditorPage() {
   if (!exists) return <Navigate to="/" />;
 
   return (
-    <div className="h-screen flex bg-gray-50 overflow-hidden">
+    <div className="h-screen flex bg-surface-sunken overflow-hidden">
       <Sidebar />
       <div className="flex-1 flex flex-col relative">
         <AlignmentToolbar />
 
         {/* Barre de navigation améliorée */}
         <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-blue-600">Dashboard</Link>
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
+            <Link to="/" className="hover:text-brand-600">Dashboard</Link>
             <span>/</span>
-            <span className="font-medium text-gray-900">{template?.name}</span>
+            <span className="font-medium text-text-primary">{template?.name}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -57,8 +57,8 @@ export function EditorPage() {
               onClick={() => setShowPreview(!showPreview)}
               className={`px-3 py-1.5 rounded text-sm flex items-center gap-1 transition-colors ${
                 showPreview
-                  ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  ? 'bg-brand-100 text-brand-700 border border-brand-300'
+                  : 'bg-surface-raised text-text-secondary hover:bg-surface border border-border'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@ export function EditorPage() {
             {/* Bouton Templates */}
             <button
               onClick={() => setShowGallery(true)}
-              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-sm hover:bg-gray-200 border border-gray-300 flex items-center gap-1"
+              className="px-3 py-1.5 bg-surface-raised text-text-secondary rounded text-sm hover:bg-surface border border-border flex items-center gap-1"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -79,11 +79,11 @@ export function EditorPage() {
               Templates
             </button>
 
-            <div className="w-px h-6 bg-gray-300 mx-1" />
+            <div className="w-px h-6 bg-border mx-1" />
 
             <Link
               to={`/mapping/${id}`}
-              className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+              className="px-4 py-2 bg-brand-600 text-white rounded text-sm hover:bg-brand-700"
             >
               Configurer CSV →
             </Link>
