@@ -29,6 +29,7 @@ export interface TemplateElement {
   rotation: number;
   properties: ElementProperties | string;
   zIndex: number;
+  groupId?: string; // For element grouping
 }
 
 // Propriétés par type d'élément
