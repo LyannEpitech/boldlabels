@@ -1,3 +1,4 @@
+import React from 'react';
 import { Line, Rect } from 'react-konva';
 import { useEditorStore } from '../../stores/editorStore';
 
@@ -20,7 +21,7 @@ export function Guides({ canvasWidth, canvasHeight }: GuidesProps) {
         
         if (guide.orientation === 'horizontal') {
           return (
-            <>
+            <React.Fragment key={`h-frag-${index}`}>
               {/* Hit area for interaction */}
               <Rect
                 x={0}
@@ -29,7 +30,6 @@ export function Guides({ canvasWidth, canvasHeight }: GuidesProps) {
                 height={GUIDE_HIT_AREA}
                 fill="transparent"
                 onDblClick={() => removeGuide(index)}
-                style={{ cursor: 'pointer' }}
               />
               {/* Visible guide line */}
               <Line
@@ -39,11 +39,11 @@ export function Guides({ canvasWidth, canvasHeight }: GuidesProps) {
                 strokeWidth={1}
                 dash={[4, 4]}
               />
-            </>
+            </React.Fragment>
           );
         } else {
           return (
-            <>
+            <React.Fragment key={`v-frag-${index}`}>
               {/* Hit area for interaction */}
               <Rect
                 x={positionPx - GUIDE_HIT_AREA / 2}
@@ -52,7 +52,6 @@ export function Guides({ canvasWidth, canvasHeight }: GuidesProps) {
                 height={canvasHeight}
                 fill="transparent"
                 onDblClick={() => removeGuide(index)}
-                style={{ cursor: 'pointer' }}
               />
               {/* Visible guide line */}
               <Line
@@ -62,7 +61,7 @@ export function Guides({ canvasWidth, canvasHeight }: GuidesProps) {
                 strokeWidth={1}
                 dash={[4, 4]}
               />
-            </>
+            </React.Fragment>
           );
         }
       })}
