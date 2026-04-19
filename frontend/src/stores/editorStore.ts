@@ -295,24 +295,28 @@ export const useEditorStore = create<EditorState & EditorActions>()(
     updateElement: async (id, updates) => {
       const { template } = get();
       if (!template) return;
-      
+
       console.log('[Store] updateElement called:', id, Object.keys(updates));
-      
+
+      // Optimistic update
+      const element = template.elements.find((el) => el.id === id);
+      if (!element) return;
+
+      const updatedElement = { ...element, ...updates };
       const updated: Template = {
         ...template,
         elements: template.elements.map((el) =>
-          el.id === id ? { ...el, ...updates } : el
+          el.id === id ? updatedElement : el
         ),
         updatedAt: new Date().toISOString(),
       };
-      
+
       set({ template: updated });
-      
-      // Auto-save to backend
+
+      // Auto-save to backend using PATCH for single element (preserves ID)
       try {
-        console.log('[Store] Sending elements:', JSON.stringify(updated.elements.map(e => ({ id: e.id, type: e.type, variableName: e.variableName }))));
-        const result = await dbService.updateTemplate(template.id, { elements: updated.elements });
-        console.log('[Store] updateElement saved, elements count:', result.elements?.length);
+        await dbService.updateElement(template.id, id, updates);
+        console.log('[Store] updateElement saved via PATCH');
       } catch (error) {
         console.error('[Store] Failed to save element update:', error);
         // Revert on error

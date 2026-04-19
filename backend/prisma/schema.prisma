@@ -39,7 +39,8 @@ model TemplateElement {
   rotation     Float    @default(0)
   properties   String
   zIndex       Int
-  
+  groupId      String?
+
   @@index([templateId])
 }
 

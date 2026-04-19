@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { Stage, Layer, Text, Rect } from 'react-konva';
-import type { KonvaEventObject } from 'konva/lib/Node';
+
 
 interface RulerProps {
   width: number;
   height: number;
   scale: number;
   onGuideAdd?: (guide: { position: number; orientation: 'horizontal' | 'vertical' }) => void;
-  // TODO: Implement guide removal and display
-  // onGuideRemove?: (index: number) => void;
-  // guides?: { position: number; orientation: 'horizontal' | 'vertical' }[];
+  children?: React.ReactNode;
 }
 
 const RULER_SIZE = 30; // pixels
@@ -20,52 +18,48 @@ export const Ruler: React.FC<RulerProps> = ({
   height,
   scale,
   onGuideAdd,
+  children,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOrientation, setDragOrientation] = useState<'horizontal' | 'vertical' | null>(null);
   const [dragPosition, setDragPosition] = useState(0);
 
-  const handleRulerMouseDown = useCallback((e: KonvaEventObject<MouseEvent>, orientation: 'horizontal' | 'vertical') => {
+  const handleRulerMouseDown = useCallback((e: React.MouseEvent, orientation: 'horizontal' | 'vertical') => {
     setIsDragging(true);
     setDragOrientation(orientation);
     
-    const stage = e.target.getStage();
-    if (!stage) return;
-    
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
-    
     if (orientation === 'horizontal') {
-      setDragPosition(pos.y);
+      setDragPosition(e.clientY);
     } else {
-      setDragPosition(pos.x);
+      setDragPosition(e.clientX);
     }
   }, []);
 
-  const handleMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging) return;
     
-    const stage = e.target.getStage();
-    if (!stage) return;
-    
-    const pos = stage.getPointerPosition();
-    if (!pos) return;
-    
     if (dragOrientation === 'horizontal') {
-      setDragPosition(pos.y - RULER_SIZE);
+      setDragPosition(e.clientY);
     } else {
-      setDragPosition(pos.x - RULER_SIZE);
+      setDragPosition(e.clientX);
     }
   }, [isDragging, dragOrientation]);
 
   const handleMouseUp = useCallback(() => {
     if (isDragging && dragOrientation) {
-      // Convert position to mm
-      const positionMm = Math.round((dragPosition / scale / MM_TO_PX) * 10) / 10;
-      
-      // Only add guide if within canvas bounds
-      if (positionMm > 0 && positionMm < (dragOrientation === 'horizontal' ? height : width)) {
-        onGuideAdd?.({ position: positionMm, orientation: dragOrientation });
+      // Calculate position relative to canvas
+      const canvasRect = document.getElementById('canvas-wrapper')?.getBoundingClientRect();
+      if (canvasRect) {
+        const positionPx = dragOrientation === 'horizontal' 
+          ? dragPosition - canvasRect.top 
+          : dragPosition - canvasRect.left;
+        
+        const positionMm = Math.round((positionPx / scale / MM_TO_PX) * 10) / 10;
+        
+        // Only add guide if within canvas bounds
+        if (positionMm > 0 && positionMm < (dragOrientation === 'horizontal' ? height : width)) {
+          onGuideAdd?.({ position: positionMm, orientation: dragOrientation });
+        }
       }
     }
     
@@ -109,29 +103,29 @@ export const Ruler: React.FC<RulerProps> = ({
   const horizontalMarks = generateMarks(width, true);
   const verticalMarks = generateMarks(height, false);
 
+  const canvasWidth = width * MM_TO_PX * scale;
+  const canvasHeight = height * MM_TO_PX * scale;
+
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', width: RULER_SIZE + canvasWidth, height: RULER_SIZE + canvasHeight }}>
       {/* Horizontal Ruler */}
       <div
         style={{
           position: 'absolute',
           top: 0,
           left: RULER_SIZE,
-          width: width * MM_TO_PX * scale,
+          width: canvasWidth,
           height: RULER_SIZE,
           backgroundColor: '#f5f5f5',
           borderBottom: '1px solid #ddd',
           cursor: 'crosshair',
         }}
-        onMouseDown={(e) => handleRulerMouseDown(e as any, 'horizontal')}
-        onMouseMove={(e) => handleMouseMove(e as any)}
+        onMouseDown={(e) => handleRulerMouseDown(e, 'horizontal')}
+        onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <Stage
-          width={width * MM_TO_PX * scale}
-          height={RULER_SIZE}
-        >
+        <Stage width={canvasWidth} height={RULER_SIZE}>
           <Layer>
             {horizontalMarks.map((mark, i) => (
               <React.Fragment key={i}>
@@ -164,20 +158,17 @@ export const Ruler: React.FC<RulerProps> = ({
           top: RULER_SIZE,
           left: 0,
           width: RULER_SIZE,
-          height: height * MM_TO_PX * scale,
+          height: canvasHeight,
           backgroundColor: '#f5f5f5',
           borderRight: '1px solid #ddd',
           cursor: 'crosshair',
         }}
-        onMouseDown={(e) => handleRulerMouseDown(e as any, 'vertical')}
-        onMouseMove={(e) => handleMouseMove(e as any)}
+        onMouseDown={(e) => handleRulerMouseDown(e, 'vertical')}
+        onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
       >
-        <Stage
-          width={RULER_SIZE}
-          height={height * MM_TO_PX * scale}
-        >
+        <Stage width={RULER_SIZE} height={canvasHeight}>
           <Layer>
             {verticalMarks.map((mark, i) => (
               <React.Fragment key={i}>
@@ -225,16 +216,30 @@ export const Ruler: React.FC<RulerProps> = ({
         mm
       </div>
 
+      {/* Canvas Container */}
+      <div
+        id="canvas-wrapper"
+        style={{
+          position: 'absolute',
+          top: RULER_SIZE,
+          left: RULER_SIZE,
+          width: canvasWidth,
+          height: canvasHeight,
+        }}
+      >
+        {children}
+      </div>
+
       {/* Dragging Guide Line */}
       {isDragging && (
         <div
           style={{
             position: 'absolute',
-            top: dragOrientation === 'horizontal' ? dragPosition + RULER_SIZE : RULER_SIZE,
-            left: dragOrientation === 'vertical' ? dragPosition + RULER_SIZE : RULER_SIZE,
-            width: dragOrientation === 'horizontal' ? width * MM_TO_PX * scale : 1,
-            height: dragOrientation === 'vertical' ? height * MM_TO_PX * scale : 1,
-            backgroundColor: '#00a8ff',
+            top: dragOrientation === 'horizontal' ? dragPosition : RULER_SIZE,
+            left: dragOrientation === 'vertical' ? dragPosition : RULER_SIZE,
+            width: dragOrientation === 'horizontal' ? canvasWidth : 1,
+            height: dragOrientation === 'vertical' ? canvasHeight : 1,
+            backgroundColor: '#6366F1',
             pointerEvents: 'none',
             zIndex: 1000,
           }}

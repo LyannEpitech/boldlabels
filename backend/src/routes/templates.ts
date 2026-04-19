@@ -140,6 +140,39 @@ export function createTemplateRoutes(prisma: PrismaClient) {
     }
   });
 
+  // PATCH /api/templates/:id/elements/:elementId - Update a single element
+  router.patch('/:id/elements/:elementId', async (req, res) => {
+    try {
+      const { id, elementId } = req.params;
+      const updates = req.body;
+      
+      // Convert properties to string if provided
+      const data: any = { ...updates };
+      if (updates.properties !== undefined) {
+        data.properties = typeof updates.properties === 'string' 
+          ? updates.properties 
+          : JSON.stringify(updates.properties);
+      }
+      
+      // Update the element
+      await prisma.templateElement.update({
+        where: { id: elementId },
+        data,
+      });
+      
+      // Return the full template
+      const template = await prisma.template.findUnique({
+        where: { id },
+        include: { elements: true },
+      });
+      
+      res.json(template);
+    } catch (error) {
+      console.error('Update element error:', error);
+      res.status(500).json({ error: 'Failed to update element' });
+    }
+  });
+
   // DELETE /api/templates/:id - Delete template
   router.delete('/:id', async (req, res) => {
     try {
