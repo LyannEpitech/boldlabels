@@ -176,6 +176,8 @@ export function Toolbar() {
     redo,
     historyIndex,
     history,
+    guides,
+    clearGuides,
   } = useEditorStore();
   
   const [activeTab, setActiveTab] = useState<'tools' | 'properties' | 'layers'>('tools');
@@ -411,19 +413,42 @@ export function Toolbar() {
                 <p className="text-xs text-text-muted mt-1">Ajoutez des éléments depuis l'onglet Outils</p>
               </div>
             ) : (
-              <div className="space-y-1">
-                {[...(template?.elements || [])]
-                  .sort((a, b) => b.zIndex - a.zIndex)
-                  .map((el) => (
-                    <LayerItem
-                      key={el.id}
-                      element={el}
-                      isSelected={selectedElementId === el.id}
-                      onSelect={() => selectElement(el.id)}
-                      onRemove={() => removeElement(el.id)}
-                    />
-                  ))}
-              </div>
+              <>
+                <div className="space-y-1">
+                  {[...(template?.elements || [])]
+                    .sort((a, b) => b.zIndex - a.zIndex)
+                    .map((el) => (
+                      <LayerItem
+                        key={el.id}
+                        element={el}
+                        isSelected={selectedElementId === el.id}
+                        onSelect={() => selectElement(el.id)}
+                        onRemove={() => removeElement(el.id)}
+                      />
+                    ))}
+                </div>
+                
+                {/* Guides section */}
+                {guides.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-medium text-text-secondary">
+                        Guides ({guides.length})
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearGuides}
+                      >
+                        Tout effacer
+                      </Button>
+                    </div>
+                    <p className="text-xs text-text-muted">
+                      Double-cliquez sur un guide pour le supprimer
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
