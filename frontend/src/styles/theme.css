@@ -64,3 +64,71 @@
   background-color: var(--color-brand-light);
   color: var(--color-brand);
 }
+
+/* Toast Notifications */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-slide-out {
+  animation: slide-out 0.3s ease-in;
+}
+
+/* Toast status colors */
+.bg-surface-success {
+  background-color: #F0FDF4;
+  border-color: #86EFAC;
+}
+
+.bg-surface-error {
+  background-color: #FEF2F2;
+  border-color: #FCA5A5;
+}
+
+.bg-surface-warning {
+  background-color: #FFFBEB;
+  border-color: #FCD34D;
+}
+
+.bg-surface-info {
+  background-color: #EFF6FF;
+  border-color: #93C5FD;
+}
+
+.text-status-success {
+  color: #166534;
+}
+
+.text-status-error {
+  color: #991B1B;
+}
+
+.text-status-warning {
+  color: #92400E;
+}
+
+.text-status-info {
+  color: #1E40AF;
+}

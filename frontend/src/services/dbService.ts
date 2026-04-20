@@ -1,4 +1,6 @@
 import type { Template, Mapping } from '../types';
+import { useToastStore } from '../stores/toastStore';
+import { parseBackendError } from '../utils/errorHandler';
 
 // Détecter si on est dans Electron
 const isElectron = () => {
@@ -8,6 +10,38 @@ const isElectron = () => {
 // API Electron
 const electronAPI = isElectron() ? (window as any).electronAPI : null;
 
+// Helper to handle errors with toast notifications
+async function handleResponse(res: Response, context: string): Promise<any> {
+  if (!res.ok) {
+    let errorData: any;
+    try {
+      errorData = await res.json();
+    } catch {
+      errorData = { message: res.statusText };
+    }
+
+    const error = {
+      response: {
+        status: res.status,
+        data: errorData,
+      },
+    };
+
+    const parsed = parseBackendError(error);
+    
+    // Show toast notification
+    useToastStore.getState().error(parsed.title, parsed.message);
+
+    throw new Error(parsed.message);
+  }
+  return res.json();
+}
+
+// Helper to show success toast
+function showSuccess(title: string, message: string) {
+  useToastStore.getState().success(title, message);
+}
+
 // Service de database adaptatif (Electron vs Web)
 export const dbService = {
   // Templates
@@ -16,8 +50,7 @@ export const dbService = {
       return electronAPI.getTemplates();
     } else {
       const res = await fetch('/api/templates');
-      if (!res.ok) throw new Error('Failed to fetch templates');
-      const templates = await res.json();
+      const templates = await handleResponse(res, 'récupération des templates');
       // Parse properties from string to object for all templates
       return templates.map((template: any) => ({
         ...template,
@@ -34,8 +67,7 @@ export const dbService = {
       return electronAPI.getTemplate(id);
     } else {
       const res = await fetch(`/api/templates/${id}`);
-      if (!res.ok) throw new Error('Failed to fetch template');
-      const template = await res.json();
+      const template = await handleResponse(res, 'récupération du template');
       // Parse properties from string to object
       if (template && template.elements) {
         template.elements = template.elements.map((el: any) => ({
@@ -49,21 +81,25 @@ export const dbService = {
 
   async createTemplate(template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>): Promise<Template> {
     if (isElectron() && electronAPI) {
-      return electronAPI.createTemplate(template);
+      const result = await electronAPI.createTemplate(template);
+      showSuccess('Template créé', `Le template "${template.name}" a été créé avec succès.`);
+      return result;
     } else {
       const res = await fetch('/api/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(template),
       });
-      if (!res.ok) throw new Error('Failed to create template');
-      return res.json();
+      const result = await handleResponse(res, 'création du template');
+      showSuccess('Template créé', `Le template "${template.name}" a été créé avec succès.`);
+      return result;
     }
   },
 
   async updateTemplate(id: string, updates: Partial<Template>): Promise<Template> {
     if (isElectron() && electronAPI) {
-      return electronAPI.updateTemplate(id, updates);
+      const result = await electronAPI.updateTemplate(id, updates);
+      return result;
     } else {
       // Use PUT if elements are included, PATCH for property-only updates
       const hasElements = 'elements' in updates && updates.elements !== undefined;
@@ -72,8 +108,7 @@ export const dbService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error('Failed to update template');
-      const template = await res.json();
+      const template = await handleResponse(res, 'mise à jour du template');
       // Parse properties from string to object
       if (template && template.elements) {
         template.elements = template.elements.map((el: any) => ({
@@ -101,8 +136,7 @@ export const dbService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error('Failed to update element');
-      const template = await res.json();
+      const template = await handleResponse(res, 'mise à jour de l\'élément');
       // Parse properties from string to object
       if (template && template.elements) {
         template.elements = template.elements.map((el: any) => ({
@@ -117,9 +151,11 @@ export const dbService = {
   async deleteTemplate(id: string): Promise<void> {
     if (isElectron() && electronAPI) {
       await electronAPI.deleteTemplate(id);
+      showSuccess('Template supprimé', 'Le template a été supprimé avec succès.');
     } else {
       const res = await fetch(`/api/templates/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete template');
+      await handleResponse(res, 'suppression du template');
+      showSuccess('Template supprimé', 'Le template a été supprimé avec succès.');
     }
   },
 
@@ -129,8 +165,7 @@ export const dbService = {
       return electronAPI.getMappings();
     } else {
       const res = await fetch('/api/mappings');
-      if (!res.ok) throw new Error('Failed to fetch mappings');
-      return res.json();
+      return handleResponse(res, 'récupération des mappings');
     }
   },
 
@@ -139,22 +174,24 @@ export const dbService = {
       return electronAPI.getMappingsByTemplate(templateId);
     } else {
       const res = await fetch(`/api/mappings?templateId=${templateId}`);
-      if (!res.ok) throw new Error('Failed to fetch mappings');
-      return res.json();
+      return handleResponse(res, 'récupération des mappings');
     }
   },
 
   async createMapping(mapping: Omit<Mapping, 'id' | 'createdAt' | 'updatedAt'>): Promise<Mapping> {
     if (isElectron() && electronAPI) {
-      return electronAPI.createMapping(mapping);
+      const result = await electronAPI.createMapping(mapping);
+      showSuccess('Mapping créé', `Le mapping "${mapping.name}" a été créé avec succès.`);
+      return result;
     } else {
       const res = await fetch('/api/mappings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mapping),
       });
-      if (!res.ok) throw new Error('Failed to create mapping');
-      return res.json();
+      const result = await handleResponse(res, 'création du mapping');
+      showSuccess('Mapping créé', `Le mapping "${mapping.name}" a été créé avec succès.`);
+      return result;
     }
   },
 
@@ -167,25 +204,27 @@ export const dbService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error('Failed to update mapping');
-      return res.json();
+      const result = await handleResponse(res, 'mise à jour du mapping');
+      showSuccess('Mapping mis à jour', 'Le mapping a été mis à jour avec succès.');
+      return result;
     }
   },
 
   async deleteMapping(id: string): Promise<void> {
     if (isElectron() && electronAPI) {
       await electronAPI.deleteMapping(id);
+      showSuccess('Mapping supprimé', 'Le mapping a été supprimé avec succès.');
     } else {
       const res = await fetch(`/api/mappings/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete mapping');
+      await handleResponse(res, 'suppression du mapping');
+      showSuccess('Mapping supprimé', 'Le mapping a été supprimé avec succès.');
     }
   },
 
   // Layout Presets
   async getLayoutPresets(templateId: string): Promise<any[]> {
     const res = await fetch(`/api/layout-presets?templateId=${templateId}`);
-    if (!res.ok) throw new Error('Failed to fetch layout presets');
-    return res.json();
+    return handleResponse(res, 'récupération des présélections');
   },
 
   async createLayoutPreset(preset: any): Promise<any> {
@@ -194,20 +233,21 @@ export const dbService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(preset),
     });
-    if (!res.ok) throw new Error('Failed to create layout preset');
-    return res.json();
+    const result = await handleResponse(res, 'création de la présélection');
+    showSuccess('Présélection créée', `La présélection "${preset.name}" a été créée avec succès.`);
+    return result;
   },
 
   async deleteLayoutPreset(id: string): Promise<void> {
     const res = await fetch(`/api/layout-presets/${id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete layout preset');
+    await handleResponse(res, 'suppression de la présélection');
+    showSuccess('Présélection supprimée', 'La présélection a été supprimée avec succès.');
   },
 
   // Session Data (replaces localStorage)
   async getSessionData(templateId: string): Promise<any> {
     const res = await fetch(`/api/session-data/${templateId}`);
-    if (!res.ok) throw new Error('Failed to fetch session data');
-    return res.json();
+    return handleResponse(res, 'récupération des données de session');
   },
 
   async saveSessionData(templateId: string, data: any): Promise<any> {
@@ -216,13 +256,12 @@ export const dbService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to save session data');
-    return res.json();
+    return handleResponse(res, 'sauvegarde des données de session');
   },
 
   async deleteSessionData(templateId: string): Promise<void> {
     const res = await fetch(`/api/session-data/${templateId}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Failed to delete session data');
+    await handleResponse(res, 'suppression des données de session');
   },
 };
 

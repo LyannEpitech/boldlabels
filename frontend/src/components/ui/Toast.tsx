@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle, AlertCircle, Info, X, AlertTriangle } from 'lucide-react';
+import { useEffect } from 'react';
+import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
 
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
-interface Toast {
+export interface Toast {
   id: string;
   type: ToastType;
+  title: string;
   message: string;
   duration?: number;
 }
@@ -15,95 +16,67 @@ interface ToastProps {
   onRemove: (id: string) => void;
 }
 
-const toastStyles: Record<ToastType, { bg: string; icon: React.ReactNode }> = {
-  success: { bg: 'bg-green-500', icon: <CheckCircle size={20} /> },
-  error: { bg: 'bg-red-500', icon: <AlertCircle size={20} /> },
-  warning: { bg: 'bg-yellow-500', icon: <AlertTriangle size={20} /> },
-  info: { bg: 'bg-blue-500', icon: <Info size={20} /> },
+const icons = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
 };
 
-function ToastItem({ toast, onRemove }: ToastProps) {
-  const [isExiting, setIsExiting] = useState(false);
-  
+const styles = {
+  success: 'bg-surface-success border-status-success text-status-success',
+  error: 'bg-surface-error border-status-error text-status-error',
+  warning: 'bg-surface-warning border-status-warning text-status-warning',
+  info: 'bg-surface-info border-status-info text-status-info',
+};
+
+export function ToastItem({ toast, onRemove }: ToastProps) {
+  const Icon = icons[toast.type];
+  const duration = toast.duration || 5000;
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      setIsExiting(true);
-      setTimeout(() => onRemove(toast.id), 300);
-    }, toast.duration || 5000);
-    
+      onRemove(toast.id);
+    }, duration);
+
     return () => clearTimeout(timer);
-  }, [toast, onRemove]);
-  
-  const style = toastStyles[toast.type];
-  
+  }, [toast.id, duration, onRemove]);
+
   return (
     <div
-      className={`
-        flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-white
-        ${style.bg}
-        transition-all duration-300
-        ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}
-      `}
+      className={`flex items-start gap-3 p-4 rounded-lg border shadow-lg animate-slide-in ${styles[toast.type]}`}
+      role="alert"
     >
-      {style.icon}
-      <p className="flex-1 text-sm font-medium">{toast.message}</p>
+      <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-sm">{toast.title}</h4>
+        <p className="text-sm mt-1 opacity-90">{toast.message}</p>
+      </div>
       <button
-        onClick={() => {
-          setIsExiting(true);
-          setTimeout(() => onRemove(toast.id), 300);
-        }}
-        className="p-1 rounded hover:bg-white/20 transition-colors"
+        onClick={() => onRemove(toast.id)}
+        className="flex-shrink-0 p-1 rounded hover:bg-black/5 transition-colors"
+        aria-label="Fermer"
       >
-        <X size={16} />
+        <X className="w-4 h-4" />
       </button>
     </div>
   );
 }
 
-// Global toast state
-let toastListeners: ((toasts: Toast[]) => void)[] = [];
-let toasts: Toast[] = [];
+interface ToastContainerProps {
+  toasts: Toast[];
+  onRemove: (id: string) => void;
+}
 
-const notify = (type: ToastType, message: string, duration?: number) => {
-  const toast: Toast = {
-    id: Math.random().toString(36).substring(7),
-    type,
-    message,
-    duration,
-  };
-  toasts = [...toasts, toast];
-  toastListeners.forEach((listener) => listener(toasts));
-};
+export function ToastContainer({ toasts, onRemove }: ToastContainerProps) {
+  if (toasts.length === 0) return null;
 
-export const toast = {
-  success: (message: string, duration?: number) => notify('success', message, duration),
-  error: (message: string, duration?: number) => notify('error', message, duration),
-  warning: (message: string, duration?: number) => notify('warning', message, duration),
-  info: (message: string, duration?: number) => notify('info', message, duration),
-};
-
-export function ToastContainer() {
-  const [localToasts, setLocalToasts] = useState<Toast[]>([]);
-  
-  useEffect(() => {
-    const listener = (newToasts: Toast[]) => setLocalToasts(newToasts);
-    toastListeners.push(listener);
-    setLocalToasts(toasts);
-    
-    return () => {
-      toastListeners = toastListeners.filter((l) => l !== listener);
-    };
-  }, []);
-  
-  const removeToast = (id: string) => {
-    toasts = toasts.filter((t) => t.id !== id);
-    toastListeners.forEach((listener) => listener(toasts));
-  };
-  
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      {localToasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none">
+      {toasts.map((toast) => (
+        <div key={toast.id} className="pointer-events-auto">
+          <ToastItem toast={toast} onRemove={onRemove} />
+        </div>
       ))}
     </div>
   );
