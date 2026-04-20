@@ -42,11 +42,12 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       const validated = TemplateSchema.parse(req.body);
       const elements = req.body.elements || [];
       
-      // Validate elements and convert properties to string
+      // Validate elements - properties is already parsed to object by schema
       const validatedElements = elements.map((el: any) => {
         const validated = TemplateElementSchema.parse(el);
         return {
           ...validated,
+          // Schema transforms string properties to object, so we stringify for DB
           properties: JSON.stringify(validated.properties),
         };
       });
@@ -98,17 +99,16 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       const validated = TemplateUpdateSchema.parse(req.body);
       const elements = req.body.elements || [];
       
-      // Validate elements and convert properties to string
+      // Validate elements - schema handles both object and string properties
       let validatedElements;
       try {
         validatedElements = elements.map((el: any, index: number) => {
           try {
             const validated = TemplateElementSchema.parse(el);
+            // Schema transforms string properties to object, so stringify for DB
             return {
               ...validated,
-              properties: typeof validated.properties === 'string' 
-                ? validated.properties 
-                : JSON.stringify(validated.properties),
+              properties: JSON.stringify(validated.properties),
             };
           } catch (zodError: any) {
             console.error(`Zod validation failed for element at index ${index}:`, el);
