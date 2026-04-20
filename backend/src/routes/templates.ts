@@ -210,6 +210,19 @@ export function createTemplateRoutes(prisma: PrismaClient) {
       const { id, elementId } = req.params;
       const updates = req.body;
       
+      console.log(`[PATCH] Updating element ${elementId} in template ${id}`);
+      console.log('[PATCH] Updates received:', JSON.stringify(updates, null, 2));
+      
+      // Check if element exists first
+      const existingElement = await prisma.templateElement.findUnique({
+        where: { id: elementId },
+      });
+      
+      if (!existingElement) {
+        console.error(`[PATCH] Element ${elementId} not found`);
+        return res.status(404).json({ error: 'Element not found' });
+      }
+      
       // Convert properties to string if provided
       const data: any = { ...updates };
       if (updates.properties !== undefined) {
@@ -217,6 +230,13 @@ export function createTemplateRoutes(prisma: PrismaClient) {
           ? updates.properties 
           : JSON.stringify(updates.properties);
       }
+      
+      // Handle groupId - ensure it's null or string
+      if (updates.groupId === undefined) {
+        delete data.groupId; // Don't update if not provided
+      }
+      
+      console.log('[PATCH] Data to update:', JSON.stringify(data, null, 2));
       
       // Update the element
       await prisma.templateElement.update({
@@ -230,10 +250,12 @@ export function createTemplateRoutes(prisma: PrismaClient) {
         include: { elements: true },
       });
       
+      console.log('[PATCH] Update successful');
       res.json(template);
-    } catch (error) {
-      console.error('Update element error:', error);
-      res.status(500).json({ error: 'Failed to update element' });
+    } catch (error: any) {
+      console.error('[PATCH] Update element error:', error);
+      console.error('[PATCH] Error stack:', error.stack);
+      res.status(500).json({ error: 'Failed to update element', details: error.message });
     }
   });
 
