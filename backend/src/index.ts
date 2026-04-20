@@ -7,6 +7,7 @@ import { createMappingRoutes } from './routes/mappings.js';
 import { createGenerateRoutes } from './routes/generate.js';
 import { createLayoutPresetRoutes } from './routes/layoutPresets.js';
 import { createSessionDataRoutes } from './routes/sessionData.js';
+import { errorHandler } from './middleware/validation.js';
 
 dotenv.config();
 
@@ -15,6 +16,16 @@ const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.path} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -28,11 +39,17 @@ app.use('/api/layout-presets', createLayoutPresetRoutes(prisma));
 app.use('/api/session-data', createSessionDataRoutes(prisma));
 app.use('/api/generate', createGenerateRoutes(prisma));
 
-// Error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not found',
+    message: `Route ${req.method} ${req.path} not found`,
+    timestamp: new Date().toISOString(),
+  });
 });
+
+// Global error handler
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
