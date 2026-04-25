@@ -1,100 +1,45 @@
-# 🏷️ BoldLabels
+# BoldLabels
 
-[![Tests](https://github.com/LyannEpitech/boldlabels/actions/workflows/test.yml/badge.svg)](https://github.com/LyannEpitech/boldlabels/actions/workflows/test.yml)
+Label design and batch PDF generation tool. Design templates visually, import CSV data, generate print-ready PDFs.
 
-Application web professionnelle pour générer des étiquettes imprimables à partir de données CSV.
+Available as a **web app** and a **desktop app** (Electron — Linux, Windows).
 
-## 🚀 Fonctionnalités
+---
 
-- **Éditeur visuel** : Créez vos templates d'étiquettes avec drag & drop
-- **Import CSV** : Mappez vos colonnes aux variables du template
-- **Génération PDF** : Exportez vos étiquettes en PDF prêt à imprimer
-- **Formats supportés** : Texte, code-barres (EAN, CODE128), QR codes, images
-- **Presets** : Templates prédéfinis (Avery 5160, 5163, etc.)
+## Repositories
 
-## 🛠️ Stack Technique
+| Repo | Description |
+|---|---|
+| [BoldLabels_local](https://github.com/LyannEpitech/BoldLabels_local) | Web app + Electron desktop — React 19 / Vite / electron-builder |
+| [BoldLabels-API](https://github.com/LyannEpitech/BoldLabels-API) | NestJS backend — Clerk auth, Electron token endpoint |
+| [BoldLabels-landing](https://github.com/LyannEpitech/BoldLabels-landing) | Marketing landing page + changelog — Vanilla JS / Vite |
 
-### Frontend
-- React 18 + TypeScript
-- Vite
-- React-Konva (canvas vectoriel)
-- Zustand (state management)
-- Tailwind CSS
-- jsPDF (génération PDF)
+---
 
-### Backend
-- Node.js 20 + Express
-- Prisma ORM
-- PostgreSQL
-- Zod (validation)
+## What it does
 
-## 📦 Installation
+| Screen | Description |
+|---|---|
+| **Library** | Manage label templates — create, rename, duplicate, import/export, delete |
+| **Editor** | Canvas-based WYSIWYG editor — drag, resize, rotate, pixel-accurate rulers |
+| **Mapping** | Import one or more CSV files, map columns to template fields, set filters |
+| **Generate** | Layout labels on A4/Letter/A5 pages, export a print-ready PDF |
 
-### Prérequis
-- Node.js 20+
-- PostgreSQL 15+
+**Supported elements:** Text (with `{{ variable }}` tokens), QR code, Barcode (100+ formats), Image, Rectangle, Circle.
 
-### Backend
-```bash
-cd backend
-cp .env.example .env
-# Éditez .env avec vos credentials DB
-npm install
-npx prisma migrate dev
-npm run dev
-```
+---
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
+## Architecture
 
-## 🧪 Tests
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for a full breakdown of how the services fit together, the authentication flow, and the deployment pipeline.
 
-```bash
-# Frontend
-cd frontend
-npm test
+---
 
-# Backend
-cd backend
-npm test
-```
+## Live URLs
 
-## 📝 Usage
-
-1. **Créer un template** : Dashboard → Nouveau template → Choisir un preset ou dimensions custom
-2. **Éditer le template** : Ajouter des éléments (texte, barcode, QR code, image, rectangle)
-3. **Configurer le mapping** : Importer un CSV → Associer les colonnes aux variables
-4. **Générer** : Choisir les options de mise en page → Télécharger le PDF
-
-## 🏗️ Architecture
-
-```
-boldlabels/
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── canvas/         # Éditeur Konva
-│   │   │   ├── ui/             # Composants UI
-│   │   │   └── ...
-│   │   ├── pages/              # Pages (Dashboard, Editor, Mapping, Generate)
-│   │   ├── stores/             # Zustand stores
-│   │   ├── utils/              # Utilitaires (PDF generator)
-│   │   └── types/              # Types TypeScript
-│   └── ...
-├── backend/
-│   ├── src/
-│   │   ├── routes/             # API routes
-│   │   ├── schemas.ts          # Validation Zod
-│   │   └── index.ts            # Server entry
-│   └── prisma/
-│       └── schema.prisma       # Database schema
-└── ...
-```
-
-## 📄 License
-
-MIT
+| Service | URL |
+|---|---|
+| Web app (prod) | https://boldlabels-local.pages.dev |
+| Web app (staging) | https://dev.boldlabels-local.pages.dev |
+| API | https://bold-label-api.fly.dev |
+| Landing | `https://boldlabels.app` *(pending domain setup)* |
