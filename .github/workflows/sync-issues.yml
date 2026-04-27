@@ -1,0 +1,24 @@
+name: Sync accepted issues
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  sync:
+    if: github.event.label.name == 'accepted'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create issue on BoldLabels_local
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          TITLE: ${{ github.event.issue.title }}
+          BODY: ${{ github.event.issue.body }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          gh issue create \
+            --repo LyannEpitech/BoldLabels_local \
+            --title "$TITLE" \
+            --body "${BODY}
+
+> Sync depuis boldlabels#${NUMBER}"
