@@ -12,13 +12,12 @@ jobs:
       - name: Create issue on BoldLabels_local
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-          TITLE: ${{ github.event.issue.title }}
-          BODY: ${{ github.event.issue.body }}
-          NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
         run: |
+          printf '%s\n\n> Sync depuis boldlabels#%s' "$ISSUE_BODY" "$ISSUE_NUMBER" > /tmp/body.txt
           gh issue create \
             --repo LyannEpitech/BoldLabels_local \
-            --title "$TITLE" \
-            --body "${BODY}
-
-> Sync depuis boldlabels#${NUMBER}"
+            --title "$ISSUE_TITLE" \
+            --body-file /tmp/body.txt
