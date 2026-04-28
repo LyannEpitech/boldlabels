@@ -15,8 +15,9 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
         run: |
-          printf '%s\n\n> Sync depuis boldlabels#%s' "$ISSUE_BODY" "$ISSUE_NUMBER" > /tmp/body.txt
+          printf '%s\n\n> Sync depuis [boldlabels#%s](%s)' "$ISSUE_BODY" "$ISSUE_NUMBER" "$ISSUE_URL" > /tmp/body.txt
           gh issue create \
             --repo LyannEpitech/BoldLabels_local \
             --title "$ISSUE_TITLE" \
