@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Update v0.9.0 release notes
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Write notes file
         run: |
-          gh release edit v0.9.0 \
-            --repo LyannEpitech/boldlabels \
-            --notes "## ✨ Nouveautés
-- **Système de crédits, streak et parrainage** : les utilisateurs accumulent des crédits à chaque session, maintiennent une série active (streak) et peuvent inviter d'autres personnes via un lien de parrainage appliqué automatiquement.
-- **Suivi analytique complet** : toutes les actions utilisateur sont instrumentées, notamment l'ouverture du panneau crédits (\`credits.panel_open\`) et l'application automatique d'un code de parrainage (\`referral.auto_applied\`)."
+          printf '%s\n' "## ✨ Nouveautés" > /tmp/notes.md
+          printf '%s\n' "- **Système de crédits, streak et parrainage** : les utilisateurs accumulent des crédits à chaque session, maintiennent une série active (streak) et peuvent inviter d'autres personnes via un lien de parrainage appliqué automatiquement." >> /tmp/notes.md
+          printf '%s\n' "- **Suivi analytique complet** : toutes les actions utilisateur sont instrumentées, notamment l'ouverture du panneau crédits (\`credits.panel_open\`) et l'application automatique d'un code de parrainage (\`referral.auto_applied\`)." >> /tmp/notes.md
+      - name: Update release
+        run: gh release edit v0.9.0 --repo LyannEpitech/boldlabels --notes-file /tmp/notes.md
